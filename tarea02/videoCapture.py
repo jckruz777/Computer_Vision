@@ -4,22 +4,22 @@
 Camera video
 """
 
+import numpy as np
 import cv2
-from matplotlib import pyplot as plt
 
-device = 0
-cam = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0)
 
-# Iterate until there are no more frames (artifically limiting to 10 frames)
-while cam.isOpened():
+while(True):
     # Capture frame-by-frame
-    ret, frame = cam.read()
-    if ret == False:
-        print("End of video")
-        break;
- 
-    cv2.imshow('frame', frame)
-    #plt.show()
- 
-cam.release()
+    ret, frame = cap.read()
+
+    # Our operations on the frame come here
+
+    # Display the resulting frame
+    cv2.imshow('frame',frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# When everything done, release the capture
+cap.release()
 cv2.destroyAllWindows()
