@@ -37,19 +37,32 @@ while(True):
         if ret == True:
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             dst = cv2.calcBackProject([hsv],[0],roi_hist,[0,180],1)
+            
+            # Filtering remove noise
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+            dst = cv2.filter2D(dst, -1, kernel)
+            _, dst = cv2.threshold(dst, 250, 255, cv2.THRESH_BINARY)
+            
+            mask = cv2.merge((dst, dst, dst))
+            result = cv2.bitwise_and(hsv, mask)
+            
             # apply meanshift to get the new location
             ret, track_window = cv2.CamShift(dst, track_window, term_crit)
+            
             # Draw it on image
-            x,y,w,h = track_window
-            img2 = cv2.rectangle(frame, (x,y), (x+w,y+h), 255,2)
-            cv2.imshow("Mask", dst)
-            cv2.imshow('img2',img2)
+            pts = cv2.boxPoints(ret)
+            pts = np.int0(pts)
+            img2 = cv2.polylines(result,[pts],True, 255,2)
+            
+            #cv2.imshow("Mask", dst)
+            cv2.imshow('Result',img2)
+            
             k = cv2.waitKey(60) & 0xff
             if k == 27:
                 break
             else:
                 cv2.imwrite(chr(k)+".jpg",img2)
-                cv2.imwrite(chr(k)+".jpg",dst)
+                cv2.imwrite(chr(k)+"2.jpg",dst)
         else:
             break
 

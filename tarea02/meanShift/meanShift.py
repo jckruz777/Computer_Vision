@@ -8,6 +8,9 @@ import numpy as np
 import pickle
 import cv2
 
+MIN_AREA = 100
+MAX_AREA = 500
+
 cap = cv2.VideoCapture(0)
 
 while(True):
@@ -35,19 +38,30 @@ while(True):
         if ret == True:
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             dst = cv2.calcBackProject([hsv],[0],roi_hist,[0,180],1)
+            
+            # Filtering remove noise
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+            dst = cv2.filter2D(dst, -1, kernel)
+            _, dst = cv2.threshold(dst, 220, 255, cv2.THRESH_BINARY)
+            
+            mask = cv2.merge((dst, dst, dst))
+            result = cv2.bitwise_and(hsv, mask)
+            
             # apply meanshift to get the new location
             ret, track_window = cv2.meanShift(dst, track_window, term_crit)
             # Draw it on image
             x,y,w,h = track_window
-            img2 = cv2.rectangle(frame, (x,y), (x+w,y+h), 255,2)
-            cv2.imshow("Mask", dst)
-            cv2.imshow('img2',img2)
+            img2 = cv2.rectangle(result, (x,y), (x+w,y+h), 255,2)
+            #cv2.imshow("Mask", dst)
+            cv2.imshow("result", result)
+            #cv2.imshow('img2',img2)
+            
             k = cv2.waitKey(60) & 0xff
             if k == 27:
                 break
             else:
                 cv2.imwrite(chr(k)+".jpg",img2)
-                cv2.imwrite(chr(k)+".jpg",dst)
+                cv2.imwrite(chr(k)+"2.jpg",dst)
         else:
             break
 
