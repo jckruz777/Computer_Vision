@@ -12,12 +12,10 @@ Created on Thu Jun  6 23:43:53 2019
 Camera video
 """
 
-import numpy as np
 import cv2
 import pickle
-import json
 
-frame = cv2.imread("test_frames/test7.jpg")
+frame = cv2.imread("../meanShift/test_frames/test7.jpg")
 
 #meanshift parameters
 iterations = 10
@@ -49,7 +47,7 @@ cv2.normalize(roi_hist,roi_hist,0,255,cv2.NORM_MINMAX)
 #cv2.destroyAllWindows()
 
 # Serializing
-filename = 'meanshift.pkl'
+filename = 'camshift.pkl'
 outfile = open(filename,'wb')
 pickle.dump(roi_hist,outfile)
 pickle.dump(tresh_min,outfile)
