@@ -9,6 +9,7 @@ The developed applications were tested on Linux Ubuntu 16.04 LTS.
 #### Requirements:
 * [Python 3](https://www.python.org/downloads/)
 * [OpenCV 3](https://pypi.org/project/opencv-python/)
+* Bash 4 or superior
 
 #### Usage
 * Give execution permissions to the _start_seg.sh_ script:
