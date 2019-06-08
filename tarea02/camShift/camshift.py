@@ -53,7 +53,10 @@ while(1):
         pts = cv2.boxPoints(ret)
         pts = np.int0(pts)
         img2 = cv2.polylines(result,[pts],True, 255,2)
-        cv2.imshow('Result',img2)
+        # Displaying the results (frame and mask)
+        np_h = np.hstack((frame, img2))
+        np_hcat = np.concatenate((frame, img2), axis=1)
+        cv2.imshow('Mean Shift Results', np_hcat)
         
         if cv2.waitKey(60) & 0xFF == ord('q'):
             break

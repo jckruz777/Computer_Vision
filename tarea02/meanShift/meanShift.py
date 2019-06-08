@@ -4,6 +4,7 @@
 Camera video
 """
 
+import numpy as np
 import pickle
 import cv2
 
@@ -50,8 +51,12 @@ while(1):
         # Draw it on image
         x,y,w,h = track_window
         img2 = cv2.rectangle(result, (x,y), (x+w,y+h), 255,2)
-        cv2.imshow("result", result)
         
+        # Displaying the results (frame and mask)
+        np_h = np.hstack((frame, result))
+        np_hcat = np.concatenate((frame, result), axis=1)
+        cv2.imshow('Mean Shift Results', np_hcat)
+
         if cv2.waitKey(60) & 0xFF == ord('q'):
             break
     else:

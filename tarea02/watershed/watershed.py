@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 import pickle
-from matplotlib import pyplot as plt
 
 # Load the initial parameters
 filename = 'watershed'
