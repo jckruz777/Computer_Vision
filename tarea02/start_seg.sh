@@ -29,7 +29,7 @@ else
 	case "$1" in
      "--ms")
           echo "Mean-shift algorithm selected!"
-          cd camShift/
+          cd meanShift/
           python3 meanShiftSerialization.py
           python3 meanShift.py
           cd ..
@@ -45,7 +45,7 @@ else
           echo "CAM-shift algorithm selected!"
           cd camShift/
           python3 camShiftSerialization.py
-          python3 camShift.py
+          python3 camshift.py
           cd ..
           ;; 
     esac
