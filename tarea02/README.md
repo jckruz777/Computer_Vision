@@ -11,7 +11,7 @@ The developed applications were tested on Linux Ubuntu 16.04 LTS.
 * [OpenCV 3](https://pypi.org/project/opencv-python/)
 
 #### Usage
-* Give executable permissions to the _start_seg.sh_ script:
+* Give execution permissions to the _start_seg.sh_ script:
     ```
     chmod +x start_seg.sh
     ```
@@ -19,7 +19,7 @@ The developed applications were tested on Linux Ubuntu 16.04 LTS.
     ```
     ./start_seg.sh --help
     ```
-    The following information will be displayed>
+    The following information will be displayed:
     ```
     ---------------------------------------------------------
     - Main Segmentation Script: start_seg.sh                -
