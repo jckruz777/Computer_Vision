@@ -3,7 +3,7 @@ import cv2
 import pickle
 
 # Load the initial parameters
-filename = 'watershed'
+filename = 'watershed.pkl'
 infile = open(filename,'rb')
 init_values = pickle.load(infile)
 infile.close()
@@ -11,7 +11,7 @@ infile.close()
 # Initial parameters
 hue_labels = init_values['hue_labels']
 noise_kernel_dim = init_values['noise_kernel_dim']
-closing_iterations = init_values['closing_iterations']
+morph_iterations = init_values['morph_iterations']
 background_iterations = init_values['background_iterations']
 morph_selector = init_values['morph_selector']
 thresh_factor = init_values['thresh_factor']
@@ -32,9 +32,9 @@ while(True):
 		# Removing some noise with a morphologycal filter: erosion + dilation 
 		kernel = np.ones((noise_kernel_dim, noise_kernel_dim), np.uint8)
 		if morph_selector == 0:
-			morph = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations = closing_iterations)
+			morph = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations = morph_iterations)
 		else:
-			morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations = closing_iterations)
+			morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations = morph_iterations)
 
 		# Background area by dilation
 		background = cv2.dilate(morph, kernel, iterations = background_iterations)
