@@ -10,10 +10,12 @@ import json
 
 #meanshift parameters
 data =	{
-  "bandwidth": 17
+  "scale": 100,
+  "sigma":0.5,
+  "min_size":50
 }
 
 # Serializing
-filename = 'meanshift.json'
+filename = 'felzenszwalb.json'
 with open(filename, 'w') as f:
     json.dump(data, f, sort_keys=True)
