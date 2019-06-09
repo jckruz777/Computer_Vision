@@ -9,12 +9,14 @@ print_help() {
 	echo "-h,--help: Prints this help message."
 	echo "--ms: Starts the Mean-shift segmentation algorithm."
 	echo "--ws: Starts the Watersheds segmentation algorithm."
-	echo "--cs: Starts the CAM-shift segmentation algorithm."
+	echo "--fw: Starts the Felzenszwalb segmentation algorithm."
 	echo ""
 	echo "Important considerations:"
 	echo " - The algorithms are applied upon a camera video stream."
 	echo " - The initial parameters can be modified in the file:"
 	echo "   <algorithm>Serialization.py"
+	echo " - For the case of the mean shift and felzenszwalb algorithms"
+	echo "   modify the parameters stored in the JSON files"
 	echo ""
 	echo "---------------------------------------------------------"
 }
@@ -30,7 +32,6 @@ else
      "--ms")
           echo "Mean-shift algorithm selected!"
           cd meanShift/
-          python3 meanShiftSerialization.py
           python3 meanShift.py
           cd ..
           ;; 
@@ -41,11 +42,10 @@ else
           python3 watershed.py
           cd ..
           ;;
-     "--cs")
-          echo "CAM-shift algorithm selected!"
-          cd camShift/
-          python3 camShiftSerialization.py
-          python3 camshift.py
+     "--fw")
+          echo "Felzenszwalb algorithm selected!"
+          cd felzenszwalb/
+          python3 felzenszwalb.py
           cd ..
           ;; 
     esac
