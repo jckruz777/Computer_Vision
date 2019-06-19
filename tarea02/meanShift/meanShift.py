@@ -5,61 +5,40 @@ Camera video
 """
 
 import numpy as np
-import pickle
+from sklearn.cluster import MeanShift
+import json
 import cv2
 
 cap = cv2.VideoCapture(0)
 
-# Capture frame-by-frame
-ret, frame = cap.read()
+#while True:
+    
+ret, image = cap.read()
 
-# Our operations on the frame come here
+# Get the image from the ndarray
+original_shape = image.shape
 
-# setup initial location of window
-r,h,c,w = 90,400,279,400  # simply hardcoded the values
-track_window = (c,r,w,h)
+# Flatten image.
+X = np.reshape(image, [-1, 3])
 
-# set up the ROI for tracking
-filename = 'meanshift.pkl'
-infile = open(filename,'rb')
-roi_hist = pickle.load(infile)
-tresh_min = pickle.load(infile)
-tresh_max = pickle.load(infile)
-iterations = pickle.load(infile)
-pt_move = pickle.load(infile)
-infile.close()
+filename = 'meanshift.json'
+with open(filename, 'r') as f:
+    data = json.load(f)
+bandwidth = data["bandwidth"]
 
-# Setup the termination criteria, either 10 iteration or move by atleast 1 pt
-term_crit = ( cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, iterations, pt_move )
+print("Training the mean-shift algorithm...")
+ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
+ms.fit(X)
+print("Training completed!")
 
-while(1):
-    ret ,frame = cap.read()
-    if ret == True:
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        dst = cv2.calcBackProject([hsv],[0],roi_hist,[0,180],1)
-        
-        # Filtering remove noise
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        dst = cv2.filter2D(dst, -1, kernel)
-        _, dst = cv2.threshold(dst, tresh_min, tresh_max, cv2.THRESH_BINARY)
-        mask = cv2.merge((dst, dst, dst))
-        result = cv2.bitwise_and(hsv, mask)
-        
-        # apply meanshift to get the new location
-        ret, track_window = cv2.meanShift(dst, track_window, term_crit)
-        
-        # Draw it on image
-        x,y,w,h = track_window
-        img2 = cv2.rectangle(result, (x,y), (x+w,y+h), 255,2)
-        
-        # Displaying the results (frame and mask)
-        np_h = np.hstack((frame, result))
-        np_hcat = np.concatenate((frame, result), axis=1)
-        cv2.imshow('Mean Shift Results', np_hcat)
+labels = ms.labels_
+cluster_centers = ms.cluster_centers_
+segmented_image = cluster_centers[np.reshape(labels, original_shape[:2])]
 
-        if cv2.waitKey(60) & 0xFF == ord('q'):
-            break
-    else:
+while True:
+    cv2.imshow('Mean Shift Results', segmented_image.astype(np.uint8))
+    
+    if cv2.waitKey(60) & 0xFF == ord('q'):
         break
 
 # When everything done, release the capture
