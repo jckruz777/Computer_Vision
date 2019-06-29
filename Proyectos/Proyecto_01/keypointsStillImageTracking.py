@@ -12,16 +12,10 @@ def getDescriptor(descriptor, octaves):
         return (cv2.xfeatures2d.SURF_create(nOctaves=octaves), "STR")
     elif descriptor == "ORB":
         return (cv2.ORB_create(nlevels=octaves), "BIN")
-    elif descriptor == "AKAZE":
-        return (cv2.AKAZE_create(), "BIN")
     elif descriptor == "BRISK":
         return (cv2.BRISK_create(octaves=octaves),"BIN")
     
-def getKeypoints(im1, im2, detector):
-    
-    # convert the images to grayscale
-    gray1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
-    gray2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)    
+def getKeypoints(gray1, gray2, detector):    
     
     # detect keypoints and extract local invariant descriptors from the img
     (kps1, descs1) = detector.detectAndCompute(gray1, None)
@@ -45,6 +39,7 @@ def getBFMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold):
             if m[0].distance < threshold / 100 * m[1].distance:
                 good.append(m[0])
     
+    n_good_matches = len(good)
     return (good)
 
 def getFLANNMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold, alg_type):
@@ -75,6 +70,7 @@ def getFLANNMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold, alg_ty
             if m[0].distance < threshold / 100 * m[1].distance:
                 good.append(m[0])
 
+    n_good_matches = len(good)
     return (good)
 
 def getHomography(good_matches, img1, img2, kp1, kp2):
@@ -88,7 +84,7 @@ def getHomography(good_matches, img1, img2, kp1, kp2):
         M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
         matchesMask = mask.ravel().tolist()
 
-        h,w,_ = img1.shape
+        h,w = img1.shape
         pts = np.float32([ [0,0], [0,h-1], [w-1,h-1], [w-1,0] ]).reshape(-1,1,2)
         dst = cv2.perspectiveTransform(pts, M)
 
@@ -107,14 +103,17 @@ def getFinalFrame(ref_img, kp1, eval_img, kp2, good_matches, matchesMask):
                        matchesMask = matchesMask, # draw only inliers
                        flags = 2)
 
-    img_result = cv2.drawMatches(ref_img, kp1, eval_img, kp2, good_matches, None, **draw_params)
-    return img_result
+    if matchesMask != None:
+        img_result = cv2.drawMatches(ref_img, kp1, eval_img, kp2, good_matches, None, **draw_params)
+        return img_result
+    else:
+        return None
 
 parser = argparse.ArgumentParser(description='Keypoints extraction and object tracking in a still image')
 parser.add_argument('--evaluation', help='Image of evaluation', default='')
 parser.add_argument('--reference', help='Image of reference with the object to be detected', default="")
-parser.add_argument('--descriptor', help='Descriptor algorithm: SIFT, SURF, ORB, AKAZE, BRISK', default='SIFT')
-parser.add_argument('--matcher', help='Matcher method: Brute force (BF) or KBTree (KB)', default='KB')
+parser.add_argument('--descriptor', help='Descriptor algorithm: SIFT, SURF, ORB, BRISK', default='SIFT')
+parser.add_argument('--matcher', help='Matcher method: Brute force (BF) or FLANN (FLANN)', default='FLANN')
 parser.add_argument('--octaves', help='Number of octaves that the descriptor will use', default=4)
 parser.add_argument('--mtreshold', help='Treshold for good matches.', default=70)
 args = parser.parse_args()
@@ -129,6 +128,8 @@ print("Matcher treshold = " + str(args.mtreshold))
 # Setup the video, image reference and descriptor
 imgRef = cv2.imread(args.reference)
 imgEval = cv2.imread(args.evaluation)
+imgRef = cv2.cvtColor(imgRef, cv2.COLOR_BGR2GRAY)
+imgEval = cv2.cvtColor(imgEval, cv2.COLOR_BGR2GRAY)
 (descriptor, descriptorType) = getDescriptor(args.descriptor, args.octaves)
 
 # Get keypoint and desciption of the frame
@@ -136,15 +137,15 @@ imgEval = cv2.imread(args.evaluation)
         
 # Get the match
 if args.matcher == "BF":
-    good = getBFMatcher(img_ref, kps1, descs1, img_eval, kps2, descs2, args.mtreshold)
-elif args.matcher == "KB":
-    good = getFLANNMatcher(img_ref, kps1, descs1, img_eval, kps2, descs2, args.mtreshold, descriptorType)
+    good = getBFMatcher(imgRef, kps1, descs1, imgEval, kps2, descs2, args.mtreshold)
+elif args.matcher == "FLANN":
+    good = getFLANNMatcher(imgRef, kps1, descs1, imgEval, kps2, descs2, args.mtreshold, descriptorType)
         
 # Get the homography
-(matchesMask, res_img) = getHomography(good, img_ref, img_eval, kps1, kps2)
+(matchesMask, res_img) = getHomography(good, imgRef, imgEval, kps1, kps2)
         
 # Get the resulting frame
-result = getFinalFrame(img_ref, kps1, img_eval, kps2, good, matchesMask)
+result = getFinalFrame(imgRef, kps1, imgEval, kps2, good, matchesMask)
 
 # Plot the result
 graph = plt.figure()
