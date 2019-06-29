@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import argparse
 import cv2
+import time
 
 def getDescriptor(descriptor, octaves):
     if descriptor == "SIFT":
@@ -13,16 +14,15 @@ def getDescriptor(descriptor, octaves):
     elif descriptor == "BRISK":
         return (cv2.BRISK_create(octaves=octaves),"BIN")
     
-def getKeypoints(gray1, gray2, detector):    
+def getKeypoints(gray1, detector):    
     
     # detect keypoints and extract local invariant descriptors from the img
+    start = time.time()
     (kps1, descs1) = detector.detectAndCompute(gray1, None)
-    (kps2, descs2) = detector.detectAndCompute(gray2, None)
-
-    img_ref = cv2.drawKeypoints(gray1, kps1, None)
-    img_eval = cv2.drawKeypoints(gray2, kps2, None)
+    end = time.time()
+    print("keypoints detection time: {:0.2f} seconds".format(end - start))
     
-    return (img_ref, img_eval, kps1, descs1, kps2, descs2)
+    return (kps1, descs1)
 
 def getBFMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold):
 
@@ -38,7 +38,7 @@ def getBFMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold):
                 good.append(m[0])
     
     n_good_matches = len(good)
-    return (good)
+    return (good, matches)
 
 def getFLANNMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold, alg_type):
 
@@ -69,7 +69,7 @@ def getFLANNMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold, alg_ty
                 good.append(m[0])
 
     n_good_matches = len(good)
-    return (good)
+    return (good, matches)
 
 def getHomography(good_matches, img1, img2, kp1, kp2):
 
@@ -128,6 +128,7 @@ imgRef = cv2.imread(args.reference)
 imgRef = cv2.cvtColor(imgRef, cv2.COLOR_BGR2GRAY)
 cap = cv2.VideoCapture(args.video)
 (descriptor, descriptorType) = getDescriptor(args.descriptor, args.octaves)
+(kps1, descs1) = descriptor.detectAndCompute(imgRef, None)
 
 # playback loop
 frameCount = 0
@@ -141,19 +142,26 @@ while(cap.isOpened()):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
         # Get keypoint and desciption of the frame
-        (img_ref, img_eval, kps1, descs1, kps2, descs2) = getKeypoints(imgRef, frame, descriptor)
+        (kps2, descs2) = getKeypoints(frame, descriptor)
         
         # Get the match
         if args.matcher == "BF":
-            good = getBFMatcher(imgRef, kps1, descs1, frame, kps2, descs2, args.mtreshold)
+            (good, matches) = getBFMatcher(imgRef, kps1, descs1, frame, kps2, descs2, args.mtreshold)
         elif args.matcher == "FLANN":
-            good = getFLANNMatcher(imgRef, kps1, descs1, frame, kps2, descs2, args.mtreshold, descriptorType)
+            (good, matches) = getFLANNMatcher(imgRef, kps1, descs1, frame, kps2, descs2, args.mtreshold, descriptorType)
         
         # Get the homography
         (matchesMask, res_img) = getHomography(good, imgRef, frame, kps1, kps2)
         
         # Get the resulting frame
         result = getFinalFrame(imgRef, kps1, frame, kps2, good, matchesMask)
+        
+        # Metric
+        correspondencies = len(matches)
+        inliers = len(matchesMask)
+        outliers = correspondencies - inliers
+        recall = inliers / correspondencies
+        print("Recall = {:0.2f}%".format(recall))
 
         cv2.imshow("Keypoints tracking", result)
     
