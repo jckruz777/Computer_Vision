@@ -158,12 +158,15 @@ while(cap.isOpened()):
         
         # Metric
         correspondencies = len(matches)
-        inliers = len(matchesMask)
+        inliers = 0
+        if matchesMask != None:
+            inliers = len(matchesMask)
         outliers = correspondencies - inliers
         recall = inliers / correspondencies
         print("Recall = {:0.2f}%".format(recall))
 
-        cv2.imshow("Keypoints tracking", result)
+        if matchesMask != None:
+            cv2.imshow("Keypoints tracking", result)
     
     frameCount += 1
     if cv2.waitKey(1) & 0xFF == ord('q'):

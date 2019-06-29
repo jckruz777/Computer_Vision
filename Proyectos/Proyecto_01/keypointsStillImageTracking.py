@@ -153,15 +153,18 @@ result = getFinalFrame(imgRef, kps1, imgEval, kps2, good, matchesMask)
 
 # Metric
 correspondencies = len(matches)
-inliers = len(matchesMask)
+inliers = 0
+if matchesMask != None:
+    inliers = len(matchesMask)
 outliers = correspondencies - inliers
 recall = inliers / correspondencies
 print("Recall = {:0.2f}%".format(recall))
 
-# Plot the result
-graph = plt.figure()
-plt.imshow(result)
-graph.show()
+if matchesMask != None:
+    # Plot the result
+    graph = plt.figure()
+    plt.imshow(result)
+    graph.show()
 
 plt.waitforbuttonpress(-1)
 
