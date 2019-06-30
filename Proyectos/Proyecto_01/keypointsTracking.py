@@ -151,7 +151,7 @@ def main(video, reference, descriptor, matcher, octaves, mtreshold):
             result = getFinalFrame(imgRef, kps1, frame, kps2, good, matchesMask)
             
             # Metric
-            correspondencies = len(good)
+            correspondencies = len(matches)
             inliers = 0
             if matchesMask != None:
                 inliers = matchesMask.count(1)
@@ -167,7 +167,7 @@ def main(video, reference, descriptor, matcher, octaves, mtreshold):
                 
             timesRes.append(timeRes)
             recallsRes.append(recall * 100)
-            matchesRes.append(len(good))
+            matchesRes.append(len(matches))
             inliersRes.append(inliers)
         
         frameCount += 1

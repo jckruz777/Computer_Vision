@@ -139,7 +139,7 @@ def main(evaluation, reference, descriptor, matcher, octaves, mtreshold, testing
     result = getFinalFrame(imgRef, kps1, imgEval, kps2, good, matchesMask)
 
     # Metric
-    correspondencies = len(good)
+    correspondencies = len(matches)
     inliers = 0
     if matchesMask != None:
         inliers = matchesMask.count(1)
