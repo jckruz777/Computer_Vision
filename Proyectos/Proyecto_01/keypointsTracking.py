@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('tkagg')
 from matplotlib import pyplot as plt
 import numpy as np
 import argparse
@@ -22,10 +24,11 @@ def getKeypoints(gray1, detector):
     end = time.time()
     print("keypoints detection time: {:0.2f} seconds".format(end - start))
     
-    return (kps1, descs1)
+    return (kps1, descs1, end - start)
 
-def getBFMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold):
+def getBFMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2):
 
+    TRESHOLD = 70
     # Match the features
     bf = cv2.BFMatcher()
     matches = bf.knnMatch(desc1,desc2, k=2)
@@ -34,14 +37,15 @@ def getBFMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold):
     good = []
     for m in matches:
         if len(m) == 2:
-            if m[0].distance < threshold / 100 * m[1].distance:
+            if m[0].distance < TRESHOLD / 100 * m[1].distance:
                 good.append(m[0])
     
     n_good_matches = len(good)
     return (good, matches)
 
-def getFLANNMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold, alg_type):
+def getFLANNMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, alg_type):
 
+    TRESHOLD = 70
     # Parameters for Binary Algorithms (BIN) 
     FLANN_INDEX_LSH = 6
     flann_params_bin= dict(algorithm = FLANN_INDEX_LSH,
@@ -65,13 +69,13 @@ def getFLANNMatcher(ref_img, kp1, desc1, eval_img, kp2, desc2, threshold, alg_ty
     good = []
     for m in matches:
         if len(m) == 2: 
-            if m[0].distance < threshold / 100 * m[1].distance:
+            if m[0].distance < TRESHOLD / 100 * m[1].distance:
                 good.append(m[0])
 
     n_good_matches = len(good)
     return (good, matches)
 
-def getHomography(good_matches, img1, img2, kp1, kp2):
+def getHomography(good_matches, img1, img2, kp1, kp2, threshold):
 
     MIN_MATCH_COUNT = 10
     
@@ -79,7 +83,7 @@ def getHomography(good_matches, img1, img2, kp1, kp2):
         src_pts = np.float32([ kp1[m.queryIdx].pt for m in good_matches ]).reshape(-1,1,2)
         dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good_matches ]).reshape(-1,1,2)
 
-        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, threshold)
         matchesMask = mask.ravel().tolist()
 
         h,w = img1.shape
@@ -106,6 +110,80 @@ def getFinalFrame(ref_img, kp1, eval_img, kp2, good_matches, matchesMask):
         return img_result
     else:
         return None
+    
+def main(video, reference, descriptor, matcher, octaves, mtreshold):
+    # Setup the video, image reference and descriptor
+    imgRef = cv2.imread(reference)
+    imgRef = cv2.cvtColor(imgRef, cv2.COLOR_BGR2GRAY)
+    cap = cv2.VideoCapture(video)
+    (descriptor, descriptorType) = getDescriptor(descriptor, int(octaves))
+    (kps1, descs1) = descriptor.detectAndCompute(imgRef, None)
+
+    timesRes = []
+    recallsRes = []
+    matchesRes = []
+    inliersRes = []
+
+    # playback loop
+    frameCount = 0
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if ret == False:
+            print("End of video")
+            break;
+
+        if frameCount % 10 == 0:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            
+            # Get keypoint and desciption of the frame
+            (kps2, descs2, timeRes) = getKeypoints(frame, descriptor)
+            
+            # Get the match
+            if matcher == "BF":
+                (good, matches) = getBFMatcher(imgRef, kps1, descs1, frame, kps2, descs2)
+            elif matcher == "FLANN":
+                (good, matches) = getFLANNMatcher(imgRef, kps1, descs1, frame, kps2, descs2, descriptorType)
+            
+            # Get the homography
+            (matchesMask, res_img) = getHomography(good, imgRef, frame, kps1, kps2, int(mtreshold))
+            
+            # Get the resulting frame
+            result = getFinalFrame(imgRef, kps1, frame, kps2, good, matchesMask)
+            
+            # Metric
+            correspondencies = len(good)
+            inliers = 0
+            if matchesMask != None:
+                inliers = matchesMask.count(1)
+            outliers = correspondencies - inliers
+            recall = 0
+            if correspondencies > 0:
+                recall = inliers / correspondencies
+            print("Recall = {:0.2f}%".format(recall*100))
+            print("Correspondencies = {:0.2f}".format(correspondencies))
+
+            if matchesMask != None:
+                cv2.imshow("Keypoints tracking", result)
+                
+            timesRes.append(timeRes)
+            recallsRes.append(recall * 100)
+            matchesRes.append(len(good))
+            inliersRes.append(inliers)
+        
+        frameCount += 1
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    return (recallsRes, timesRes, matchesRes, inliersRes)
+
+def plotResults(lines, title, legend, legend2, xlabel, ylabel):
+    plt.legend((legend, legend2),
+            loc='upper right')
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.show()  
 
 parser = argparse.ArgumentParser(description='Keypoints extraction and object tracking')
 parser.add_argument('--video', help='Video path', default='')
@@ -113,7 +191,7 @@ parser.add_argument('--reference', help='Image of reference with the object to b
 parser.add_argument('--descriptor', help='Descriptor algorithm: SIFT, SURF, ORB, BRISK', default='SIFT')
 parser.add_argument('--matcher', help='Matcher method: Brute force (BF) or FLANN (FLANN)', default='FLANN')
 parser.add_argument('--octaves', help='Number of octaves that the descriptor will use', default=4)
-parser.add_argument('--mtreshold', help='Treshold for good matches.', default=70)
+parser.add_argument('--mtreshold', help='Treshold for good matches.', default=5)
 args = parser.parse_args()
 
 print("Video path = " + args.video)
@@ -123,55 +201,16 @@ print("Matcher = " + args.matcher)
 print("Octaves = " + str(args.octaves))
 print("Matcher treshold = " + str(args.mtreshold))
 
-# Setup the video, image reference and descriptor
-imgRef = cv2.imread(args.reference)
-imgRef = cv2.cvtColor(imgRef, cv2.COLOR_BGR2GRAY)
-cap = cv2.VideoCapture(args.video)
-(descriptor, descriptorType) = getDescriptor(args.descriptor, args.octaves)
-(kps1, descs1) = descriptor.detectAndCompute(imgRef, None)
+(recalls, timeResults, matchesRes, inliersRes) = main(args.video, args.reference, args.descriptor, args.matcher, args.octaves, args.mtreshold)
 
-# playback loop
-frameCount = 0
-while(cap.isOpened()):
-    ret, frame = cap.read()
-    if ret == False:
-        print("End of video")
-        break;
+x = range(0,len(timeResults))
+lines = plt.plot(x, timeResults)
+plotResults(lines, 'Descriptors time test in video', args.descriptor, '', 'Frame', 'Time [s]',)
 
-    if frameCount % 10 == 0:
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        
-        # Get keypoint and desciption of the frame
-        (kps2, descs2) = getKeypoints(frame, descriptor)
-        
-        # Get the match
-        if args.matcher == "BF":
-            (good, matches) = getBFMatcher(imgRef, kps1, descs1, frame, kps2, descs2, args.mtreshold)
-        elif args.matcher == "FLANN":
-            (good, matches) = getFLANNMatcher(imgRef, kps1, descs1, frame, kps2, descs2, args.mtreshold, descriptorType)
-        
-        # Get the homography
-        (matchesMask, res_img) = getHomography(good, imgRef, frame, kps1, kps2)
-        
-        # Get the resulting frame
-        result = getFinalFrame(imgRef, kps1, frame, kps2, good, matchesMask)
-        
-        # Metric
-        correspondencies = len(matches)
-        inliers = 0
-        if matchesMask != None:
-            inliers = len(matchesMask)
-        outliers = correspondencies - inliers
-        recall = inliers / correspondencies
-        print("Recall = {:0.2f}%".format(recall))
+x = range(0, len(recalls))
+lines2 = plt.plot(x, recalls)
+plotResults(lines2, 'Descriptors recall test in video', args.descriptor, '', 'Frame', 'Recall')
 
-        if matchesMask != None:
-            cv2.imshow("Keypoints tracking", result)
-    
-    frameCount += 1
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-cap.release()
-
-
+x = range(0, len(matchesRes))
+lines3 = plt.plot(x, matchesRes, x, inliersRes)
+plotResults(lines3, args.descriptor + ' matches test in video', 'Correspondencies', 'Inliers', 'Frame', 'Number of matches')
