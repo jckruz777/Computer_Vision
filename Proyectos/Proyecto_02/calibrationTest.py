@@ -1,7 +1,7 @@
 import numpy as np
 import argparse
-import pickle
 import cv2
+import json
 
 def draw(img, corners, imgpts):
     corner = tuple(corners[0].ravel())
@@ -12,11 +12,10 @@ def draw(img, corners, imgpts):
 
 def streamTest(device, calibrationPath, chessboardSize):
     # Load the calibration parameters
-    data = pickle.load( open( calibrationPath, "rb" ) )
-    mtx = data['mtx']
-    dist = data['dist']
-    #rvecs = data['rvecs']
-    #tvecs = data['tvecs']
+    with open(calibrationPath, 'r') as file:
+        data = json.load(file)
+    mtx = np.asarray(data['mtx'])
+    dist = np.asarray(data['dist'])
     
     # Stop criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -39,7 +38,6 @@ def streamTest(device, calibrationPath, chessboardSize):
             
             ret, corners = cv2.findChessboardCorners(gray, chessboardSize, None)
             if ret == True:
-                #corners2 = cv2.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
                 # Find the rotation and translation vectors.
                 ret,rvecs, tvecs = cv2.solvePnP(objp, corners, mtx, dist)
                 # project 3D points to image plane

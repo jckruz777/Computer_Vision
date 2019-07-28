@@ -1,9 +1,9 @@
 from datetime import datetime
 import numpy as np
 import argparse
-import pickle
 import cv2
 import os
+import codecs, json
 
 def cameraCalibration(chessboardSize, captureDirectory):
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
@@ -55,12 +55,10 @@ def cameraCalibration(chessboardSize, captureDirectory):
     
     print('Serializaing the calibration results...')
     results =	{
-        "mtx": mtx,
-        "dist": dist,
-        "rvecs": rvecs,
-        "tvecs": tvecs
+        "mtx": mtx.tolist(),
+        "dist": dist.tolist()
     }
-    pickle.dump( results, open( 'calibration-' + str(datetime.timestamp(datetime.now())) + '.pckl', "wb" ) )
+    json.dump(results, codecs.open('calibration-' + str(datetime.timestamp(datetime.now())) + '.json', 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
 
 def main():
     # Parameters
