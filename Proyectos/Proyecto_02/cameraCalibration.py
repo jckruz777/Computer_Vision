@@ -1,7 +1,7 @@
 from datetime import datetime
 import numpy as np
 import argparse
-import yaml
+import pickle
 import cv2
 import os
 
@@ -60,9 +60,7 @@ def cameraCalibration(chessboardSize, captureDirectory):
         "rvecs": rvecs,
         "tvecs": tvecs
     }
-    
-    with open('calibration-' + str(datetime.timestamp(datetime.now())) + '.yaml', 'w') as f:
-        yaml.dump(results, f, sort_keys=True)
+    pickle.dump( results, open( 'calibration-' + str(datetime.timestamp(datetime.now())) + '.pckl', "wb" ) )
 
 def main():
     # Parameters
