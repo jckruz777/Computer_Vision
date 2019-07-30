@@ -62,13 +62,13 @@ def main():
     # Parameters
     DEVICE = 0
     CALIBRATE_FILENAME = 'chessboard'
-    CHESSBOARD_SIZE = (7, 6)
+    CHESSBOARD_SIZE = (7, 7)
     
     # Setup the command line arguments
     parser = argparse.ArgumentParser(description='Test script for the camera calibration')
     parser.add_argument('--device', help='Camera device id (Default is 0)', default=0, type=int)
     parser.add_argument('--calibrateFilename', help='Calibration config filename', default='')
-    parser.add_argument('--chessboardSize', help='Size of the chessboard (Default (7, 6))', nargs='+', type=int)
+    parser.add_argument('--chessboardSize', help='Size of the chessboard (Default (7, 7))', nargs='+', type=int)
     args = parser.parse_args()
     
     DEVICE = int(args.device)

@@ -55,7 +55,7 @@ def captureChessboard(device, captures, interval, chessboardSize, winSize, showC
                 break
             
         else:
-            print('Cannnot get more frame from the camera device')
+            print('Cannot get more frame from the camera device')
             break
         
         # Update the time elapse
@@ -70,7 +70,7 @@ def main():
     DEVICE = 0
     CAPTURES = 4
     INTERVAL = 10 #seconds
-    CHESSBOARD_SIZE = (7, 6)
+    CHESSBOARD_SIZE = (7, 7)
     WIN_SIZE = (5, 5)
     SHOW_CHESSBOARD_CORNERS = True
     CAPTURE_DIRECTORY = './'
@@ -81,7 +81,7 @@ def main():
     parser.add_argument('--device', help='Camera device id (Default is 0)', default=0, type=int)
     parser.add_argument('--captures', help='Number of image to capture (Default is 4)', default=4, type=int)
     parser.add_argument('--interval', help='Interval value in seconds between captures (Default is 10s)', default=10, type=int)
-    parser.add_argument('--chessboardSize', help='Size of the chessboard (Default (7, 6))', nargs='+', type=int)
+    parser.add_argument('--chessboardSize', help='Size of the chessboard (Default (7, 7))', nargs='+', type=int)
     parser.add_argument('--showChessboardCorner', help='Display the corners detected (Default True)', default=True)
     parser.add_argument('--captureDirectory', help='Path to the directory to store the captures (Default is ./)', default='./')
     parser.add_argument('--captureFilename', help='Capture base filename', default='chessboard')
