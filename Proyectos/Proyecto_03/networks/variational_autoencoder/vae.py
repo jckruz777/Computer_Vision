@@ -153,6 +153,10 @@ if __name__ == '__main__':
     parser.add_argument("-m",
                         "--mse",
                         help=help_, action='store_true')
+    help_ = "Enable the plot feature"
+    parser.add_argument("-p",
+                        "--plot",
+                        help=help_, action='store_true')
     args = parser.parse_args()
     models = (encoder, decoder)
     data = (x_test, y_test)
@@ -172,9 +176,10 @@ if __name__ == '__main__':
     vae.add_loss(vae_loss)
     vae.compile(optimizer='adam')
     vae.summary()
-    plot_model(vae,
-               to_file='vae_mlp.png',
-               show_shapes=True)
+    if (args.plot):
+        plot_model(vae,
+                to_file='vae_mlp.png',
+                show_shapes=True)
 
     if args.weights:
         vae.load_weights(args.weights)
@@ -186,7 +191,8 @@ if __name__ == '__main__':
                 validation_data=(x_test, None))
         vae.save_weights('vae_mlp_mnist.h5')
 
-    plot_results(models,
-                 data,
-                 batch_size=batch_size,
-                 model_name="vae_mlp")
+    if args.plot:
+        plot_results(models,
+                    data,
+                    batch_size=batch_size,
+                    model_name="vae_mlp")
