@@ -129,7 +129,6 @@ z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
 # instantiate encoder model
 encoder = Model(inputs, [z_mean, z_log_var, z], name='encoder')
 encoder.summary()
-plot_model(encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
 
 # build decoder model
 latent_inputs = Input(shape=(latent_dim,), name='z_sampling')
@@ -139,7 +138,6 @@ outputs = Dense(original_dim, activation='sigmoid')(x)
 # instantiate decoder model
 decoder = Model(latent_inputs, outputs, name='decoder')
 decoder.summary()
-plot_model(decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
 
 # instantiate VAE model
 outputs = decoder(encoder(inputs)[2])
@@ -160,6 +158,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     models = (encoder, decoder)
     data = (x_test, y_test)
+    
+    #Plot network architecture
+    if args.plot:
+        plot_model(encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
+        plot_model(decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
 
     # VAE loss = mse_loss or xent_loss + kl_loss
     if args.mse:
