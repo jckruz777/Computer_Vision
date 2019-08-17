@@ -103,6 +103,34 @@ def plot_results(models,
     plt.savefig(filename)
     plt.show()
 
+def MSE(imageA, imageB):
+	# the 'Mean Squared Error' between the two images is the
+	# sum of the squared difference between the two images;
+	# NOTE: the two images must have the same dimension
+	err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
+	err /= float(imageA.shape[0] * imageA.shape[1])
+
+	# return the MSE, the lower the error, the more "similar"
+	# the two images are
+	return err
+
+def prediction(orig, autoencoder):
+    img = np.reshape(orig, [-1, 50*50])
+    img = img.astype('float32') / 255
+
+    rec = autoencoder.predict(img)
+    print(rec.shape)
+    rec = rec * 255
+    rec = rec.astype('int32')
+    rec = np.reshape(rec, [-1, 50, 50, 3])
+
+    reconstruction_loss = MSE(orig[0], rec[0])
+    print("Reconstruction error: " + str(reconstruction_loss))
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
 # Breast cancer dataset
 
 # grab the paths to all input images in the original input directory
@@ -120,18 +148,14 @@ for i, trainImage in enumerate(trainPaths):
     x_train.append(img)
     #y_train[i] = img
 x_train = np.asarray(x_train)
-print(x_train[0].shape)
 
 x_val = []
-y_val = []
 for i, valImage in enumerate(valPaths):
     img = cv2.imread(valImage)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.resize(img, (50, 50))
     x_val.append(img)
-    y_val.append(img)
 x_val = np.asarray(x_val)
-y_val = np.asarray(y_val)
 #x_test = np.zeros((len(testPaths), 50, 50))
 
 image_size = x_train.shape[1]
@@ -188,9 +212,15 @@ if __name__ == '__main__':
     parser.add_argument("-p",
                         "--plot",
                         help=help_, action='store_true')
+    help_ = "Predict image reconstruction"
+    parser.add_argument("--predict",
+                        help=help_,
+                        default='')
     args = parser.parse_args()
     models = (encoder, decoder)
-    data = (x_val, y_val)
+    data = (x_val, x_val)
+
+    predictImg = str(args.predict)
 
     #Plot network architecture
     if args.plot:
@@ -221,11 +251,20 @@ if __name__ == '__main__':
         vae.load_weights(args.weights)
     else:
         # train the autoencoder
-        vae.fit(x_train,
+        vae.fit(x_train, x_train,
+                suffle=True,
                 epochs=epochs,
                 batch_size=batch_size,
-                validation_data=(x_val, None))
+                validation_data=(x_val, x_val))
         vae.save_weights('vae_mlp_mnist.h5')
+
+    if predictImg != '':
+        img = cv2.imread(predictImg)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, (50, 50))
+        images = np.array([img])
+        print(images.shape)
+        prediction(images, vae)
 
     if args.plot:
         plot_results(models,
