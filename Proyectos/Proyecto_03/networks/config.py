@@ -1,17 +1,20 @@
 # import the necessary packages
 import os
 
+# network base path
+NET_BASE = os.path.sep.join(["..", ".."])
+
 # initialize the path to the *original* input directory of images
-ORIG_INPUT_DATASET = "../../datasets/orig"
+ORIG_INPUT_DATASET = "datasets/orig"
 
 # initialize the base path to the *new* directory that will contain
 # our images after computing the training and testing split
-BASE_PATH = "../../datasets/idc"
+BASE_PATH = "datasets/idc"
 
 # derive the training, validation, and testing directories
-TRAIN_PATH = os.path.sep.join([BASE_PATH, "training"])
-VAL_PATH = os.path.sep.join([BASE_PATH, "validation"])
-TEST_PATH = os.path.sep.join([BASE_PATH, "testing"])
+TRAIN_PATH = os.path.sep.join([NET_BASE, BASE_PATH, "training"])
+VAL_PATH = os.path.sep.join([NET_BASE, BASE_PATH, "validation"])
+TEST_PATH = os.path.sep.join([NET_BASE, BASE_PATH, "testing"])
 
 # define the amount of data that will be used training
 TRAIN_SPLIT = 0.8
