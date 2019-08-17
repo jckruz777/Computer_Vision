@@ -111,30 +111,35 @@ trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TR
 valPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_PATH])))
 testPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_PATH])))
 
-x_train = np.zeros((len(trainPaths), 50, 50))
+x_train = []
 #y_train = np.zeros((len(trainPaths), 50, 50))
 for i, trainImage in enumerate(trainPaths):
     img = cv2.imread(trainImage)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    x_train[i] = img
+    img = cv2.resize(img, (50, 50))
+    x_train.append(img)
     #y_train[i] = img
+x_train = np.asarray(x_train)
+print(x_train[0].shape)
 
-x_val = np.zeros((len(valPaths), 50, 50))
-y_val = np.zeros((len(valPaths), 50, 50))
+x_val = []
+y_val = []
 for i, valImage in enumerate(valPaths):
     img = cv2.imread(valImage)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    x_val[i] = img
-    y_val[i] = img
-
+    img = cv2.resize(img, (50, 50))
+    x_val.append(img)
+    y_val.append(img)
+x_val = np.asarray(x_val)
+y_val = np.asarray(y_val)
 #x_test = np.zeros((len(testPaths), 50, 50))
 
 image_size = x_train.shape[1]
 original_dim = image_size * image_size
 x_train = np.reshape(x_train, [-1, original_dim])
-x_val = np.reshape(x_test, [-1, original_dim])
+x_val = np.reshape(x_val, [-1, original_dim])
 x_train = x_train.astype('float32') / 255
-x_val = x_test.astype('float32') / 255
+x_val = x_val.astype('float32') / 255
 
 # network parameters
 input_shape = (original_dim, )
