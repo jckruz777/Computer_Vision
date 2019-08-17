@@ -108,21 +108,22 @@ def train(n_samples, batch_size, n_epochs):
 	valPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_PATH])))
 	testPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_PATH])))
 
-	x_train = np.zeros((len(trainPaths), 50, 50))
-	#y_train = np.zeros((len(trainPaths), 50, 50))
+	x_train = []
 	for i, trainImage in enumerate(trainPaths):
 	    img = cv2.imread(trainImage)
 	    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-	    x_train[i] = img
+	    img = cv2.resize(img, (50, 50))
+	    x_train.append(img)
 	    #y_train[i] = img
+	x_train = np.asarray(x_train)
 
-	x_test = np.zeros((len(valPaths), 50, 50))
-	y_test = np.zeros((len(valPaths), 50, 50))
+	x_test = []
 	for i, valImage in enumerate(valPaths):
 	    img = cv2.imread(valImage)
 	    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-	    x_test[i] = img
-	    y_test[i] = img
+	    img = cv2.resize(img, (50, 50))
+	    x_test.append(img)
+	x_test = np.asarray(x_test)
 
 	# Get n_samples/10 samples from each class
 	x_classes = {}
