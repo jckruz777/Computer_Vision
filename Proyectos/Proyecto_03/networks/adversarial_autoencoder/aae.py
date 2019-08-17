@@ -18,6 +18,12 @@ from sklearn.manifold import TSNE
 from absl import flags
 from absl import app
 
+import sys
+sys.path.append('..')
+import config
+from imutils import paths
+import cv2
+
 
 FLAGS = flags.FLAGS
 
