@@ -23,6 +23,7 @@ sys.path.append('..')
 import config
 from imutils import paths
 import cv2
+import os
 
 
 FLAGS = flags.FLAGS
@@ -103,9 +104,9 @@ def train(n_samples, batch_size, n_epochs):
 
 	# grab the paths to all input images in the original input directory
 	# and shuffle them
-	trainPaths = list(paths.list_images(config.TRAIN_PATH))
-	valPaths = list(paths.list_images(config.VAL_PATH))
-	testPaths = list(paths.list_images(config.TEST_PATH))
+	trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH])))
+	valPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_PATH])))
+	testPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_PATH])))
 
 	x_train = np.zeros((len(trainPaths), 50, 50))
 	#y_train = np.zeros((len(trainPaths), 50, 50))

@@ -12,9 +12,9 @@ ORIG_INPUT_DATASET = "datasets/orig"
 BASE_PATH = "datasets/idc"
 
 # derive the training, validation, and testing directories
-TRAIN_PATH = os.path.sep.join([NET_BASE, BASE_PATH, "training"])
-VAL_PATH = os.path.sep.join([NET_BASE, BASE_PATH, "validation"])
-TEST_PATH = os.path.sep.join([NET_BASE, BASE_PATH, "testing"])
+TRAIN_PATH = os.path.sep.join([BASE_PATH, "training"])
+VAL_PATH = os.path.sep.join([BASE_PATH, "validation"])
+TEST_PATH = os.path.sep.join([BASE_PATH, "testing"])
 
 # define the amount of data that will be used training
 TRAIN_SPLIT = 0.8
