@@ -14,6 +14,12 @@ import matplotlib.pyplot as plt
 import argparse
 import os
 
+import sys
+sys.path.append('..')
+import config
+from imutils import paths
+import cv2
+
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample eps = N(0,I)
@@ -97,16 +103,38 @@ def plot_results(models,
     plt.savefig(filename)
     plt.show()
 
+# Breast cancer dataset
 
-# MNIST dataset
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+# grab the paths to all input images in the original input directory
+# and shuffle them
+trainPaths = list(paths.list_images(config.TRAIN_PATH))
+valPaths = list(paths.list_images(config.VAL_PATH))
+testPaths = list(paths.list_images(config.TEST_PATH))
+
+x_train = np.zeros((len(trainPaths), 50, 50))
+#y_train = np.zeros((len(trainPaths), 50, 50))
+for i, trainImage in enumerate(trainPaths):
+    img = cv2.imread(trainImage)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    x_train[i] = img
+    #y_train[i] = img
+
+x_val = np.zeros((len(valPaths), 50, 50))
+y_val = np.zeros((len(valPaths), 50, 50))
+for i, valImage in enumerate(valPaths):
+    img = cv2.imread(valImage)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    x_train[i] = img
+    y_train[i] = img
+
+#x_test = np.zeros((len(testPaths), 50, 50))
 
 image_size = x_train.shape[1]
 original_dim = image_size * image_size
 x_train = np.reshape(x_train, [-1, original_dim])
-x_test = np.reshape(x_test, [-1, original_dim])
+x_val = np.reshape(x_test, [-1, original_dim])
 x_train = x_train.astype('float32') / 255
-x_test = x_test.astype('float32') / 255
+x_val = x_test.astype('float32') / 255
 
 # network parameters
 input_shape = (original_dim, )
@@ -157,8 +185,8 @@ if __name__ == '__main__':
                         help=help_, action='store_true')
     args = parser.parse_args()
     models = (encoder, decoder)
-    data = (x_test, y_test)
-    
+    data = (x_val, y_val)
+
     #Plot network architecture
     if args.plot:
         plot_model(encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
@@ -191,7 +219,7 @@ if __name__ == '__main__':
         vae.fit(x_train,
                 epochs=epochs,
                 batch_size=batch_size,
-                validation_data=(x_test, None))
+                validation_data=(x_val, None))
         vae.save_weights('vae_mlp_mnist.h5')
 
     if args.plot:
