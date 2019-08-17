@@ -124,8 +124,8 @@ y_val = np.zeros((len(valPaths), 50, 50))
 for i, valImage in enumerate(valPaths):
     img = cv2.imread(valImage)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    x_train[i] = img
-    y_train[i] = img
+    x_val[i] = img
+    y_val[i] = img
 
 #x_test = np.zeros((len(testPaths), 50, 50))
 

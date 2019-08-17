@@ -49,7 +49,7 @@ def create_model(input_dim, latent_dim, verbose=False, save_graph=False):
 	encoder.add(Dense(1000, input_shape=(input_dim,), activation='relu'))
 	encoder.add(Dense(1000, activation='relu'))
 	encoder.add(Dense(latent_dim, activation=None))
-	
+
 	decoder = Sequential()
 	decoder.add(Dense(1000, input_shape=(latent_dim,), activation='relu'))
 	decoder.add(Dense(1000, activation='relu'))
@@ -63,7 +63,7 @@ def create_model(input_dim, latent_dim, verbose=False, save_graph=False):
 
 	autoencoder = Model(autoencoder_input, decoder(encoder(autoencoder_input)))
 	autoencoder.compile(optimizer=Adam(lr=1e-4), loss="mean_squared_error")
-	
+
 	if FLAGS.adversarial:
 		discriminator.compile(optimizer=Adam(lr=1e-4), loss="binary_crossentropy")
 		discriminator.trainable = False
@@ -92,7 +92,31 @@ def create_model(input_dim, latent_dim, verbose=False, save_graph=False):
 
 def train(n_samples, batch_size, n_epochs):
 	autoencoder, discriminator, generator, encoder, decoder = create_model(input_dim=784, latent_dim=FLAGS.latent_dim)
-	(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+	# Breast cancer dataset
+
+	# grab the paths to all input images in the original input directory
+	# and shuffle them
+	trainPaths = list(paths.list_images(config.TRAIN_PATH))
+	valPaths = list(paths.list_images(config.VAL_PATH))
+	testPaths = list(paths.list_images(config.TEST_PATH))
+
+	x_train = np.zeros((len(trainPaths), 50, 50))
+	#y_train = np.zeros((len(trainPaths), 50, 50))
+	for i, trainImage in enumerate(trainPaths):
+	    img = cv2.imread(trainImage)
+	    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+	    x_train[i] = img
+	    #y_train[i] = img
+
+	x_test = np.zeros((len(valPaths), 50, 50))
+	y_test = np.zeros((len(valPaths), 50, 50))
+	for i, valImage in enumerate(valPaths):
+	    img = cv2.imread(valImage)
+	    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+	    x_test[i] = img
+	    y_test[i] = img
+
 	# Get n_samples/10 samples from each class
 	x_classes = {}
 	y_classes = {}
@@ -127,7 +151,7 @@ def train(n_samples, batch_size, n_epochs):
 				discriminator_labels = np.concatenate((np.zeros((batch_size, 1)), np.ones((batch_size, 1))))
 				discriminator_history = discriminator.fit(x=discriminator_input, y=discriminator_labels, epochs=1, batch_size=batch_size, validation_split=0.0, verbose=0)
 				generator_history = generator.fit(x=samples, y=np.ones((batch_size, 1)), epochs=1, batch_size=batch_size, validation_split=0.0, verbose=0)
-			
+
 			autoencoder_losses.append(autoencoder_history.history["loss"])
 			if FLAGS.adversarial:
 				discriminator_losses.append(discriminator_history.history["loss"])
@@ -262,5 +286,3 @@ def main(argv):
 
 if __name__ == "__main__":
 	app.run(main)
-
-
