@@ -83,7 +83,7 @@ class VAE:
 
     def compile(self):
         self._vae.add_loss(self._vae_loss)
-        self._vae.compile(optimizer='adam')
+        self._vae.compile(optimizer='rmsprop')
         self._vae.summary()
 
     def loadWeights(self, weights):
@@ -102,7 +102,13 @@ class VAE:
         img = np.reshape(orig, [-1, 50*50])
         img = img.astype('float32') / 255
 
-        return self._vae.evaluate(img, verbose=0)
+        rec = self._vae.predict(img)
+        rec = rec * 255
+        rec = rec.astype('int32')
+        rec = np.reshape(rec, [-1, 50, 50, 3])
+
+        rec_img = rec[0]
+        return (self._vae.evaluate(img, verbose=0), rec_img)
 
     def plot(self):
         plot_model(self._encoder, to_file='vae_mlp_encoder.png', show_shapes=True)

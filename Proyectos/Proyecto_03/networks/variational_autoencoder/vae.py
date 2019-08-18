@@ -70,10 +70,18 @@ if __name__ == '__main__':
 
     if predict_img != '':
         img = cv2.imread(predict_img)
+        cv2.imshow('Original', img)
+        cv2.waitKey(1)
+
         img = utils.preprocess(img)
         images = np.array([img])
-        reconstruction_error = vae.prediction(images)
+        reconstruction_error, rec = vae.prediction(images)
         print("Reconstruction error: " + str(reconstruction_error))
+
+        rec = cv2.cvtColor(rec.astype('uint8'), cv2.COLOR_RGB2BGR)
+        cv2.imshow('Reconstruction', np.array(rec, dtype = np.uint8 ))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     if args.plot:
         utils.plot_results(models,
