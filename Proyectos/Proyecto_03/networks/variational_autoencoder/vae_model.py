@@ -91,11 +91,10 @@ class VAE:
 
     def train(self, x_train, x_val):
         # train the autoencoder
-        history = self._vae.fit(x_train,
+        self._history = self._vae.fit(x_train,
                 epochs=self._epochs,
                 batch_size=self._batch_size,
                 validation_data=(x_val, None))
-        print(history)
         self._vae.save_weights('vae_mlp.h5')
 
     def prediction(self, orig):
@@ -114,3 +113,12 @@ class VAE:
         plot_model(self._encoder, to_file='vae_mlp_encoder.png', show_shapes=True)
         plot_model(self._decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
         plot_model(self._vae, to_file='vae_mlp.png', show_shapes=True)
+
+        plt.plot(self._history.history['loss'])
+        plt.plot(self._history.history['val_loss'])
+        plt.title('Model loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+        plt.savefig('vae_mlp_error.png')
+        plt.show()

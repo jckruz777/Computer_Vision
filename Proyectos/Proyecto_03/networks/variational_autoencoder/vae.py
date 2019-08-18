@@ -65,9 +65,6 @@ if __name__ == '__main__':
         # Compile the model
         vae.compile()
 
-    if (args.plot):
-        vae.plot()
-
     if args.weights:
         vae.loadWeights(args.weights)
     elif args.cnn:
@@ -86,6 +83,9 @@ if __name__ == '__main__':
         print("Start training...")
         vae.train(x_train, x_val)
 
+    if (args.plot):
+        vae.plot()
+
     if predict_img != '':
         img = cv2.imread(predict_img)
         orig = img
@@ -97,8 +97,8 @@ if __name__ == '__main__':
         detector = AnomalyDetector(anomaly_treshold = 60)
         detector.evaluate(reconstruction_error, orig, rec)
 
-    if args.plot:
-        utils.plot_results(models,
-                    data,
-                    batch_size=batch_size,
-                    model_name="vae_mlp")
+    # if args.plot:
+    #     utils.plot_results(models,
+    #                 data,
+    #                 batch_size=batch_size,
+    #                 model_name="vae_mlp")
