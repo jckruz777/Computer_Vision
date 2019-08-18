@@ -2,19 +2,23 @@ import sys
 sys.path.append('..')
 import config
 
-from keras.datasets import mnist
+from keras import backend as K
 from imutils import paths
 
 import numpy as np
+import time
 import cv2
 import os
+
+
+EPSILON = 1e-8
 
 def preprocess(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.resize(img, (50, 50))
     return img
 
-def getData():
+def getData(nd_images = False):
     # grab the paths to all input images in the original input directory
     # and shuffle them
     trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH])))
@@ -27,7 +31,8 @@ def getData():
         img = preprocess(img)
         x_train.append(img)
     x_train = np.asarray(x_train)
-    x_train = np.reshape(x_train, [-1, 50*50])
+    if not nd_images:
+        x_train = np.reshape(x_train, [-1, 50*50])
     x_train = x_train.astype('float32') / 255
 
     x_val = []
@@ -36,7 +41,8 @@ def getData():
         img = preprocess(img)
         x_val.append(img)
     x_val = np.asarray(x_val)
-    x_val = np.reshape(x_val, [-1, 50*50])
+    if not nd_images:
+        x_val = np.reshape(x_val, [-1, 50*50])
     x_val = x_val.astype('float32') / 255
 
     return (x_train, x_val)
@@ -101,3 +107,77 @@ def plot_results(models,
     plt.imshow(figure, cmap='Greys_r')
     plt.savefig(filename)
     plt.show()
+
+def get_one_hot_vector(idx, dim=10):
+    """
+    Returns a 1-hot vector of dimension dim with the 1 at index idx
+    Parameters
+    ----------
+    idx : int
+        Index where one hot vector is 1
+    dim : int
+        Dimension of one hot vector
+    """
+    one_hot = np.zeros(dim)
+    one_hot[idx] = 1.
+    return one_hot
+
+def get_timestamp_filename(filename):
+    """
+    Returns a string of the form "filename_<date>.html"
+    """
+    date = time.strftime("%H-%M_%d-%m-%Y")
+    return filename + "_" + date + ".html"
+
+
+def kl_normal(z_mean, z_log_var):
+    """
+    KL divergence between N(0,1) and N(z_mean, exp(z_log_var)) where covariance
+    matrix is diagonal.
+    Parameters
+    ----------
+    z_mean : Tensor
+    z_log_var : Tensor
+    dim : int
+        Dimension of tensor
+    """
+    # Sum over columns, so this now has size (batch_size,)
+    kl_per_example = .5 * (K.sum(K.square(z_mean) + K.exp(z_log_var) - 1 - z_log_var, axis=1))
+    return K.mean(kl_per_example)
+
+
+def kl_discrete(dist):
+    """
+    KL divergence between a uniform distribution over num_cat categories and
+    dist.
+    Parameters
+    ----------
+    dist : Tensor - shape (None, num_categories)
+    num_cat : int
+    """
+    num_categories = tuple(dist.get_shape().as_list())[1]
+    dist_sum = K.sum(dist, axis=1)  # Sum over columns, this now has size (batch_size,)
+    dist_neg_entropy = K.sum(dist * K.log(dist + EPSILON), axis=1)
+    return np.log(num_categories) + K.mean(dist_neg_entropy - dist_sum)
+
+
+def sampling_concrete(alpha, out_shape, temperature=0.67):
+    """
+    Sample from a concrete distribution with parameters alpha.
+    Parameters
+    ----------
+    alpha : Tensor
+        Parameters
+    """
+    uniform = K.random_uniform(shape=out_shape)
+    gumbel = - K.log(- K.log(uniform + EPSILON) + EPSILON)
+    logit = (K.log(alpha + EPSILON) + gumbel) / temperature
+    return K.softmax(logit)
+
+
+def sampling_normal(z_mean, z_log_var, out_shape):
+    """
+    Sampling from a normal distribution with mean z_mean and variance z_log_var
+    """
+    epsilon = K.random_normal(shape=out_shape, mean=0., stddev=1.)
+    return z_mean + K.exp(z_log_var / 2) * epsilon

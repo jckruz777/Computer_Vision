@@ -8,6 +8,8 @@ import argparse
 import cv2
 import os
 
+from anomaly_detector import AnomalyDetector
+from vae_cnn_model import VAECNN
 from vae_model import VAE
 import utils
 
@@ -30,6 +32,10 @@ if __name__ == '__main__':
                         help=help_,
                         type=int,
                         default=128)
+    help_ = "Use CNN VAE"
+    parser.add_argument("--cnn",
+                        help=help_,
+                        action='store_true')
     help_ = "Enable the plot feature"
     parser.add_argument("-p",
                         "--plot",
@@ -45,21 +51,33 @@ if __name__ == '__main__':
     original_dim = image_size * image_size
 
     # VAE model = encoder + decoder
-    vae = VAE(original_dim, args.batch, args.epochs)
-    vae.build()
+    vae = None
+    if args.cnn:
+        vae = VAECNN(latent_disc_dim=10)
+    else:
+        vae = VAE(original_dim, args.batch, args.epochs)
+        vae.build()
 
-    # VAE loss = mse_loss or xent_loss + kl_loss
-    reconstruction_loss = "mse" if args.mse else "binary_crossentropy"
-    vae.setReconstructionError(reconstruction_loss)
+        # VAE loss = mse_loss or xent_loss + kl_loss
+        reconstruction_loss = "mse" if args.mse else "binary_crossentropy"
+        vae.setReconstructionError(reconstruction_loss)
 
-    # Compile the model
-    vae.compile()
+        # Compile the model
+        vae.compile()
 
     if (args.plot):
         vae.plot()
 
     if args.weights:
         vae.loadWeights(args.weights)
+    elif args.cnn:
+        # train the autoencoder
+        print("Loading the dataset...")
+        x_train, x_val = utils.getData(nd_images=True)
+        print(x_train.shape)
+        print("Dataset loaded")
+        print("Start training...")
+        vae.fit(x_train, num_epochs=args.epochs, batch_size=args.batch)
     else:
         # train the autoencoder
         print("Loading the dataset...")
@@ -70,18 +88,14 @@ if __name__ == '__main__':
 
     if predict_img != '':
         img = cv2.imread(predict_img)
-        cv2.imshow('Original', img)
-        cv2.waitKey(1)
-
+        orig = img
         img = utils.preprocess(img)
         images = np.array([img])
         reconstruction_error, rec = vae.prediction(images)
         print("Reconstruction error: " + str(reconstruction_error))
 
-        rec = cv2.cvtColor(rec.astype('uint8'), cv2.COLOR_RGB2BGR)
-        cv2.imshow('Reconstruction', np.array(rec, dtype = np.uint8 ))
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        detector = AnomalyDetector(anomaly_treshold = 60)
+        detector.evaluate(reconstruction_error, orig, rec)
 
     if args.plot:
         utils.plot_results(models,
