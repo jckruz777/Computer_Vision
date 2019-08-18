@@ -18,13 +18,6 @@ from sklearn.manifold import TSNE
 from absl import flags
 from absl import app
 
-import sys
-sys.path.append('..')
-import config
-from imutils import paths
-import cv2
-import os
-
 
 FLAGS = flags.FLAGS
 
@@ -99,32 +92,7 @@ def create_model(input_dim, latent_dim, verbose=False, save_graph=False):
 
 def train(n_samples, batch_size, n_epochs):
 	autoencoder, discriminator, generator, encoder, decoder = create_model(input_dim=784, latent_dim=FLAGS.latent_dim)
-
-	# Breast cancer dataset
-
-	# grab the paths to all input images in the original input directory
-	# and shuffle them
-	trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH])))
-	valPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_PATH])))
-	testPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_PATH])))
-
-	x_train = []
-	for i, trainImage in enumerate(trainPaths):
-	    img = cv2.imread(trainImage)
-	    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-	    img = cv2.resize(img, (50, 50))
-	    x_train.append(img)
-	    #y_train[i] = img
-	x_train = np.asarray(x_train)
-
-	x_test = []
-	for i, valImage in enumerate(valPaths):
-	    img = cv2.imread(valImage)
-	    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-	    img = cv2.resize(img, (50, 50))
-	    x_test.append(img)
-	x_test = np.asarray(x_test)
-
+	(x_train, y_train), (x_test, y_test) = mnist.load_data()
 	# Get n_samples/10 samples from each class
 	x_classes = {}
 	y_classes = {}
