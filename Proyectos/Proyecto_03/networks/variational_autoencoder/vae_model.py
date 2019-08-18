@@ -36,7 +36,7 @@ class VAE:
         self._input_shape = (original_dim, )
         self._intermediate_dim = 512
         self._batch_size = 128
-        self._latent_dim = 64
+        self._latent_dim = 8
         self._epochs = 50
 
     def build(self):
