@@ -36,7 +36,7 @@ class VAE:
         self._input_shape = (original_dim, )
         self._intermediate_dim = 512
         self._batch_size = 128
-        self._latent_dim = 2
+        self._latent_dim = 64
         self._epochs = 50
 
     def build(self):
@@ -83,7 +83,7 @@ class VAE:
 
     def compile(self):
         self._vae.add_loss(self._vae_loss)
-        self._vae.compile(optimizer='rmsprop')
+        self._vae.compile(optimizer='adam')
         self._vae.summary()
 
     def loadWeights(self, weights):
