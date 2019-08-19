@@ -50,8 +50,27 @@ for (dType, imagePaths, baseOutput) in datasets:
 
 		# construct the path to the destination image and then copy
 		# the image itself
-		p = os.path.sep.join([baseOutput, filename])
 		if (dType == "training" or dType == "validation") and label != "1":
+
+			# build the path to the label directory
+			labelPath = os.path.sep.join([baseOutput, label])
+
+			# if the label output directory does not exist, create it
+			if not os.path.exists(labelPath):
+				print("[INFO] 'creating {}' directory".format(labelPath))
+				os.makedirs(labelPath)
+
+			p = os.path.sep.join([labelPath, filename])
 			shutil.copy2(inputPath, p)
 		if dType == "testing":
+
+			# build the path to the label directory
+			labelPath = os.path.sep.join([baseOutput, label])
+
+			# if the label output directory does not exist, create it
+			if not os.path.exists(labelPath):
+				print("[INFO] 'creating {}' directory".format(labelPath))
+				os.makedirs(labelPath)
+
+			p = os.path.sep.join([labelPath, filename])
 			shutil.copy2(inputPath, p)

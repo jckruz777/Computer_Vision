@@ -10,12 +10,18 @@ from keras.objectives import binary_crossentropy
 from utils import (kl_normal, kl_discrete, sampling_normal,
                   sampling_concrete, EPSILON)
 
+import os
+import sys
+sys.path.append('..')
+import config
+from imutils import paths
+
 
 class VAECNN():
     """
     Class to handle building and training VAE models.
     """
-    def __init__(self, input_shape=(50, 50, 3), latent_cont_dim=2,
+    def __init__(self, input_shape=(48, 48, 3), latent_cont_dim=2,
                  latent_disc_dim=0, hidden_dim=128, filters=(64, 64, 64)):
         """
         Setting up everything.
@@ -42,7 +48,7 @@ class VAECNN():
         self.hidden_dim = hidden_dim
         self.filters = filters
 
-    def fit(self, x_train, num_epochs=1, batch_size=100, val_split=.1,
+    def fit(self, trainGen, valGen, num_epochs=1, batch_size=100, val_split=.1,
             learning_rate=1e-3, reset_model=True):
         """
         Training model
@@ -52,22 +58,36 @@ class VAECNN():
         if reset_model:
             self._set_model()
 
-        if x_train.shape[0] % batch_size != 0:
-            print("Training data shape {} is not divisible by batch size {}".format(x_train.shape[0], self.batch_size))
-            res = int(x_train.shape[0] / batch_size)
-            train_size = res * batch_size
-            x_train = x_train[:train_size,:,:,:]
-            print("New train set shape {}".format(x_train.shape[0]))
+        # if x_train.shape[0] % batch_size != 0:
+        #     print("Training data shape {} is not divisible by batch size {}".format(x_train.shape[0], self.batch_size))
+        #     res = int(x_train.shape[0] / batch_size)
+        #     train_size = res * batch_size
+        #     x_train = x_train[:train_size,:,:,:]
+        #     print("New train set shape {}".format(x_train.shape[0]))
 
 
         # Update parameters
         K.set_value(self.opt.lr, learning_rate)
         self.model.compile(optimizer=self.opt, loss=self._vae_loss)
 
-        self.model.fit(x_train, x_train,
-                       epochs=self.num_epochs,
-                       batch_size=self.batch_size,
-                       validation_split=val_split)
+        # determine the total number of image paths in training, validation,
+        # and testing directories
+        trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH])))
+        totalTrain = len(trainPaths)
+        totalVal = len(list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_PATH]))))
+        totalTest = len(list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_PATH]))))
+
+        H = self.model.fit_generator(
+	        trainGen,
+        	steps_per_epoch=totalTrain // self.batch_size,
+        	validation_data=valGen,
+        	validation_steps=totalVal // self.batch_size,
+        	epochs=self.num_epochs)
+
+        # self.model.fit(x_train, x_train,
+        #                epochs=self.num_epochs,
+        #                batch_size=self.batch_size,
+        #                validation_split=val_split)
         self.model.save_weights('vae_cnn.h5')
 
     def loadWeights(self, weights):

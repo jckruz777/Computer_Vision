@@ -8,6 +8,7 @@ import argparse
 import cv2
 import os
 
+from keras.preprocessing.image import ImageDataGenerator
 from anomaly_detector import AnomalyDetector
 from sklearn.metrics import roc_curve, auc
 from vae_cnn_model import VAECNN
@@ -18,6 +19,7 @@ import utils
 import sys
 sys.path.append('..')
 import config
+from imutils import paths
 
 
 if __name__ == '__main__':
@@ -78,13 +80,65 @@ if __name__ == '__main__':
     if args.weights:
         vae.loadWeights(args.weights)
     elif args.cnn:
+
         # train the autoencoder
         print("Loading the dataset...")
-        x_train, x_val = utils.getData(nd_images=True)
-        print(x_train.shape)
+
+        # account for skew in the labeled data
+        # trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH])))
+        # trainLabels = [int(p.split(os.path.sep)[-2]) for p in trainPaths]
+        # trainLabels = np_utils.to_categorical(trainLabels)
+        # classTotals = trainLabels.sum(axis=0)
+        # classWeight = classTotals.max() / classTotals
+
+        # initialize the training data augmentation object
+        trainAug = ImageDataGenerator(
+        	rescale=1 / 255.0,
+        	rotation_range=20,
+        	zoom_range=0.05,
+        	width_shift_range=0.1,
+        	height_shift_range=0.1,
+        	shear_range=0.05,
+        	horizontal_flip=True,
+        	vertical_flip=True,
+        	fill_mode="nearest")
+
+        # initialize the validation (and testing) data augmentation object
+        valAug = ImageDataGenerator(rescale=1 / 255.0)
+
+        print(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH]))
+
+        # initialize the training generator
+        trainGen = trainAug.flow_from_directory(
+        	os.path.sep.join([config.NET_BASE, config.TRAIN_PATH]),
+        	class_mode="input",
+        	target_size=(48, 48),
+        	color_mode="rgb",
+        	shuffle=True,
+        	batch_size=args.batch)
+
+        # initialize the validation generator
+        valGen = valAug.flow_from_directory(
+        	os.path.sep.join([config.NET_BASE, config.VAL_PATH]),
+        	class_mode="input",
+        	target_size=(48, 48),
+        	color_mode="rgb",
+        	shuffle=False,
+        	batch_size=args.batch)
+
+        # initialize the testing generator
+        testGen = valAug.flow_from_directory(
+        	os.path.sep.join([config.NET_BASE, config.TEST_PATH]),
+        	class_mode="input",
+        	target_size=(48, 48),
+        	color_mode="rgb",
+        	shuffle=False,
+        	batch_size=args.batch)
+
+        #x_train, x_val = utils.getData(nd_images=True)
         print("Dataset loaded")
         print("Start training...")
-        vae.fit(x_train, num_epochs=args.epochs, batch_size=args.batch)
+        vae.fit(trainGen, valGen, num_epochs=args.epochs, batch_size=args.batch)
     else:
         # train the autoencoder
         print("Loading the dataset...")
