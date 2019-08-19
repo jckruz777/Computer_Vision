@@ -44,6 +44,7 @@ class VAE:
         # build encoder model
         self._inputs = Input(shape=self._input_shape, name='encoder_input')
         x = Dense(self._intermediate_dim, activation='relu')(self._inputs)
+        x = Dense(self._intermediate_dim, activation='relu')(x)
         self._z_mean = Dense(self._latent_dim, name='z_mean')(x)
         self._z_log_var = Dense(self._latent_dim, name='z_log_var')(x)
 
@@ -58,6 +59,7 @@ class VAE:
         # build decoder model
         latent_inputs = Input(shape=(self._latent_dim,), name='z_sampling')
         x = Dense(self._intermediate_dim, activation='relu')(latent_inputs)
+        x = Dense(self._intermediate_dim, activation='relu')(x)
         self._outputs = Dense(self._original_dim, activation='sigmoid')(x)
 
         # instantiate decoder model

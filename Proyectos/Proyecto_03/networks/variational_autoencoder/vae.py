@@ -12,6 +12,7 @@ from anomaly_detector import AnomalyDetector
 from sklearn.metrics import roc_curve, auc
 from vae_cnn_model import VAECNN
 from vae_model import VAE
+import random
 import utils
 
 import sys
@@ -112,9 +113,12 @@ if __name__ == '__main__':
         y_res = []
         normal_res = []
         anormal_res = []
-        patients = os.listdir(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_DATASET]))
 
-        for patient in patients:
+        patients = os.listdir(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_DATASET]))
+        random.seed(3)
+        random.shuffle(patients)
+
+        for patient in patients[-3:]:
             x_normal, x_anormal = utils.getValData(patient)
 
             y_prob += np.zeros(len(x_normal)).tolist() + np.ones(len(x_anormal)).tolist()
