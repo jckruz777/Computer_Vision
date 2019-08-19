@@ -18,6 +18,30 @@ def preprocess(img):
     img = cv2.resize(img, (50, 50))
     return img
 
+def getValData(patient):
+    normalPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_DATASET, patient, "0"])))
+    anormalPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_DATASET, patient, "1"])))
+
+    x_normal = []
+    for i, normalImage in enumerate(normalPaths):
+        img = cv2.imread(normalImage)
+        img = preprocess(img)
+        x_normal.append(img)
+    x_normal = np.asarray(x_normal)
+    #x_normal = np.reshape(x_normal, [-1, 50*50])
+    #x_normal = x_normal.astype('float32') / 255
+
+    x_anormal = []
+    for i, anormalImage in enumerate(anormalPaths):
+        img = cv2.imread(anormalImage)
+        img = preprocess(img)
+        x_anormal.append(img)
+    x_anormal = np.asarray(x_anormal)
+    #x_anormal = np.reshape(x_anormal, [-1, 50*50])
+    #x_anormal = x_anormal.astype('float32') / 255
+
+    return (x_normal, x_anormal)
+
 def getData(nd_images = False):
     # grab the paths to all input images in the original input directory
     # and shuffle them

@@ -16,6 +16,9 @@ TRAIN_PATH = os.path.sep.join([BASE_PATH, "training"])
 VAL_PATH = os.path.sep.join([BASE_PATH, "validation"])
 TEST_PATH = os.path.sep.join([BASE_PATH, "testing"])
 
+PATIENT_NORMAL = os.path.sep.join([NET_BASE, ORIG_INPUT_DATASET, "10254", "0"])
+PATIENT_ANORMAL = os.path.sep.join([NET_BASE, ORIG_INPUT_DATASET, "10253", "1"])
+
 # define the amount of data that will be used training
 TRAIN_SPLIT = 0.8
 

@@ -9,9 +9,14 @@ import cv2
 import os
 
 from anomaly_detector import AnomalyDetector
+from sklearn.metrics import roc_curve, auc
 from vae_cnn_model import VAECNN
 from vae_model import VAE
 import utils
+
+import sys
+sys.path.append('..')
+import config
 
 
 if __name__ == '__main__':
@@ -34,6 +39,10 @@ if __name__ == '__main__':
                         default=128)
     help_ = "Use CNN VAE"
     parser.add_argument("--cnn",
+                        help=help_,
+                        action='store_true')
+    help_ = "Test the breast cancer dataset"
+    parser.add_argument("--test",
                         help=help_,
                         action='store_true')
     help_ = "Enable the plot feature"
@@ -96,6 +105,59 @@ if __name__ == '__main__':
 
         detector = AnomalyDetector(anomaly_treshold = 60)
         detector.evaluate(reconstruction_error, orig, rec)
+
+    if args.test:
+
+        y_prob = []
+        y_res = []
+        normal_res = []
+        anormal_res = []
+        patients = os.listdir(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_DATASET]))
+
+        for patient in patients:
+            x_normal, x_anormal = utils.getValData(patient)
+
+            y_prob += np.zeros(len(x_normal)).tolist() + np.ones(len(x_anormal)).tolist()
+            for normal_img in x_normal:
+                images = np.array([normal_img])
+                reconstruction_error, _ = vae.prediction(images)
+                normal_res.append(reconstruction_error)
+                if reconstruction_error < 40:
+                    y_res.append(0)
+                else:
+                    y_res.append(1)
+
+            for anormal_img in x_anormal:
+                images = np.array([anormal_img])
+                reconstruction_error, _ = vae.prediction(images)
+                anormal_res.append(reconstruction_error)
+                if reconstruction_error < 40:
+                    y_res.append(0)
+                else:
+                    y_res.append(1)
+
+        fpr, tpr, thresholds = roc_curve(y_prob, y_res)
+
+        plt.plot(fpr, tpr, color='orange', label='ROC')
+        plt.plot([0, 1], [0, 1], color='darkblue', linestyle='--')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver Operating Characteristic (ROC) Curve')
+        plt.legend()
+        plt.savefig('roc.png')
+        plt.show()
+
+        print("Average error for normal images: " + str(np.average(np.array(normal_res))))
+        print("Average error for anomal images: " + str(np.average(np.array(anormal_res))))
+
+        plt.scatter(range(len(normal_res)), normal_res)
+        plt.scatter(range(len(anormal_res)), anormal_res)
+        plt.title('Reconstruction test')
+        plt.ylabel('Loss')
+        plt.xlabel('Image')
+        plt.legend(['Normal', 'Anomaly'], loc='upper right')
+        plt.savefig('reconstruction_test.png')
+        plt.show()
 
     # if args.plot:
     #     utils.plot_results(models,
