@@ -6,7 +6,7 @@ from keras.layers.merge import Concatenate
 from keras.models import Model
 from keras.optimizers import RMSprop
 from keras import backend as K
-from keras.objectives import binary_crossentropy
+from keras.objectives import binary_crossentropy, mse
 from utils import (kl_normal, kl_discrete, sampling_normal,
                   sampling_concrete, EPSILON)
 
@@ -58,24 +58,19 @@ class VAECNN():
         if reset_model:
             self._set_model()
 
-        # if x_train.shape[0] % batch_size != 0:
-        #     print("Training data shape {} is not divisible by batch size {}".format(x_train.shape[0], self.batch_size))
-        #     res = int(x_train.shape[0] / batch_size)
-        #     train_size = res * batch_size
-        #     x_train = x_train[:train_size,:,:,:]
-        #     print("New train set shape {}".format(x_train.shape[0]))
-
-
-        # Update parameters
-        K.set_value(self.opt.lr, learning_rate)
-        self.model.compile(optimizer=self.opt, loss=self._vae_loss)
-
         # determine the total number of image paths in training, validation,
         # and testing directories
         trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH])))
         totalTrain = len(trainPaths)
         totalVal = len(list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_PATH]))))
         totalTest = len(list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_PATH]))))
+
+        if totalTrain % batch_size != 0:
+            raise(RuntimeError("Training data shape {} is not divisible by batch size {}".format(totalTrain, self.batch_size)))
+
+        # Update parameters
+        #K.set_value(self.opt.lr, learning_rate)
+        self.model.compile(optimizer=self.opt, loss=self._vae_loss)
 
         H = self.model.fit_generator(
 	        trainGen,
@@ -84,10 +79,6 @@ class VAECNN():
         	validation_steps=totalVal // self.batch_size,
         	epochs=self.num_epochs)
 
-        # self.model.fit(x_train, x_train,
-        #                epochs=self.num_epochs,
-        #                batch_size=self.batch_size,
-        #                validation_split=val_split)
         self.model.save_weights('vae_cnn.h5')
 
     def loadWeights(self, weights):
@@ -134,10 +125,12 @@ class VAECNN():
 
         # Sample from latent distributions
         if self.latent_disc_dim:
+            print("Concrete distribution")
             z = Lambda(self._sampling_normal)([z_mean, z_log_var])
             c = Lambda(self._sampling_concrete)(alpha)
             encoding = Concatenate()([z, c])
         else:
+            print("Normal distribution")
             encoding = Lambda(self._sampling_normal)([z_mean, z_log_var])
 
         # Generator
@@ -185,7 +178,7 @@ class VAECNN():
             self.alpha = alpha
 
         # Compile models
-        self.opt = RMSprop()
+        self.opt = 'adam'
         self.model.compile(optimizer=self.opt, loss=self._vae_loss)
         # Loss and optimizer do not matter here as we do not train these models
         self.generator.compile(optimizer=self.opt, loss='mse')
@@ -209,7 +202,7 @@ class VAECNN():
         x = K.flatten(x)
         x_generated = K.flatten(x_generated)
         reconstruction_loss = self.input_shape[0] * self.input_shape[1] * \
-                                  binary_crossentropy(x, x_generated)
+                                  mse(x, x_generated)
         kl_normal_loss = kl_normal(self.z_mean, self.z_log_var)
         if self.latent_disc_dim:
             kl_disc_loss = kl_discrete(self.alpha)

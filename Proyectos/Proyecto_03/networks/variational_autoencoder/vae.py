@@ -65,7 +65,7 @@ if __name__ == '__main__':
     # VAE model = encoder + decoder
     vae = None
     if args.cnn:
-        vae = VAECNN(latent_disc_dim=10)
+        vae = VAECNN(latent_cont_dim=8)
     else:
         vae = VAE(original_dim, args.batch, args.epochs)
         vae.build()
@@ -84,13 +84,6 @@ if __name__ == '__main__':
         # train the autoencoder
         print("Loading the dataset...")
 
-        # account for skew in the labeled data
-        # trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH])))
-        # trainLabels = [int(p.split(os.path.sep)[-2]) for p in trainPaths]
-        # trainLabels = np_utils.to_categorical(trainLabels)
-        # classTotals = trainLabels.sum(axis=0)
-        # classWeight = classTotals.max() / classTotals
-
         # initialize the training data augmentation object
         trainAug = ImageDataGenerator(
         	rescale=1 / 255.0,
@@ -102,11 +95,11 @@ if __name__ == '__main__':
         	horizontal_flip=True,
         	vertical_flip=True,
         	fill_mode="nearest")
+            #preprocessing_function=imageResize)
 
         # initialize the validation (and testing) data augmentation object
         valAug = ImageDataGenerator(rescale=1 / 255.0)
-
-        print(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH]))
+                                    #preprocessing_function=imageResize)
 
         # initialize the training generator
         trainGen = trainAug.flow_from_directory(
