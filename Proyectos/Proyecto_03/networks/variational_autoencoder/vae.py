@@ -65,7 +65,7 @@ if __name__ == '__main__':
     # VAE model = encoder + decoder
     vae = None
     if args.cnn:
-        vae = VAECNN(latent_cont_dim=8)
+        vae = VAECNN(latent_cont_dim=8, latent_disc_dim=3)
     else:
         vae = VAE(original_dim, args.batch, args.epochs)
         vae.build()
