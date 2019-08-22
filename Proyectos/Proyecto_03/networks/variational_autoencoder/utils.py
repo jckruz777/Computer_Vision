@@ -15,7 +15,7 @@ EPSILON = 1e-8
 
 def preprocess(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (50, 50))
+    img = cv2.resize(img, (48, 48))
     return img
 
 def getValData(patient):

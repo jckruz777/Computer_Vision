@@ -11,6 +11,7 @@ from utils import (kl_normal, kl_discrete, sampling_normal,
                   sampling_concrete, EPSILON)
 
 import os
+import cv2
 import sys
 sys.path.append('..')
 import config
@@ -81,7 +82,8 @@ class VAECNN():
 
         self.model.save_weights('vae_cnn.h5')
 
-    def loadWeights(self, weights):
+    def loadWeights(self, weights, batch_size=1):
+        self.batch_size = batch_size
         self._set_model()
         self.model.load_weights(weights)
 
@@ -224,11 +226,11 @@ class VAECNN():
         return sampling_concrete(args, (self.batch_size, self.latent_disc_dim))
 
     def prediction(self, orig):
-        img = img.astype('float32') / 255
+        img = orig.astype('float32') / 255
 
         rec = self.model.predict(img)
         rec = rec * 255
         rec = rec.astype('int32')
 
         rec_img = rec[0]
-        return (self._vae.evaluate(img, verbose=0), rec_img)
+        return (self.model.evaluate(img, img, verbose=0, batch_size=1), rec_img)
