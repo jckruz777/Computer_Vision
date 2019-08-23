@@ -30,7 +30,7 @@ def sampling(args):
     return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
 class VAE:
-    def __init__(self, original_dim, batch_size, epochs):
+    def __init__(self, original_dim, batch_size, epochs, img_width, img_height):
         # network parameters
         self._original_dim = original_dim
         self._input_shape = (original_dim, )
@@ -38,6 +38,8 @@ class VAE:
         self._batch_size = 128
         self._latent_dim = 8
         self._epochs = 50
+        self._img_width = img_width
+        self._img_height = img_height
 
     def build(self):
         # VAE model = encoder + decoder
@@ -100,16 +102,18 @@ class VAE:
         self._vae.save_weights('vae_mlp.h5')
 
     def prediction(self, orig):
-        img = np.reshape(orig, [-1, 50*50])
+        img = np.reshape(orig, [-1, self._img_width*self._img_height])
         img = img.astype('float32') / 255
 
         rec = self._vae.predict(img)
         rec = rec * 255
         rec = rec.astype('int32')
-        rec = np.reshape(rec, [-1, 50, 50, 3])
+        rec = np.reshape(rec, [-1, self._img_width, self._img_height, 3])
 
+        ssimg = ssim(img[0], rec[0], multichannel=True)
         rec_img = rec[0]
-        return (self._vae.evaluate(img, verbose=0), rec_img)
+        return (ssimg, rec_img)
+        #return (self._vae.evaluate(img, verbose=0), rec_img)
 
     def plot(self):
         plot_model(self._encoder, to_file='vae_mlp_encoder.png', show_shapes=True)

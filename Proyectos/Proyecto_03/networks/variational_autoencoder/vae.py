@@ -27,9 +27,15 @@ if __name__ == '__main__':
     help_ = "Load h5 model trained weights"
     parser.add_argument("-w", "--weights", help=help_)
     help_ = "Use mse loss instead of binary cross entropy (default)"
+    parser.add_argument("-ds",
+                        "--dataset",
+                        help=help_,
+                        type=int,
+                        default=1)
+    help_ = "Dataset ID: 1-Breast Cancer Set (default), 2-Textured Ellipsoids"
     parser.add_argument("-m",
                         "--mse",
-                        help=help_, action='store_true')
+                        help=help_,action='store_true')
     help_ = "Epochs value (default = 50)"
     parser.add_argument("--epochs",
                         help=help_,
@@ -59,15 +65,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     predict_img = str(args.predict)
-    image_size = 50
-    original_dim = image_size * image_size
+    dataset_id = int(args.dataset)
+    image_width = 50 if dataset_id == 1 else 360
+    image_height = 50 if dataset_id == 1 else 290
+    original_dim = image_width * image_height
 
     # VAE model = encoder + decoder
     vae = None
     if args.cnn:
         vae = VAECNN(latent_cont_dim=8, latent_disc_dim=3)
     else:
-        vae = VAE(original_dim, args.batch, args.epochs)
+        vae = VAE(original_dim, args.batch, args.epochs, image_width, image_height)
         vae.build()
 
         # VAE loss = mse_loss or xent_loss + kl_loss
@@ -105,7 +113,7 @@ if __name__ == '__main__':
         trainGen = trainAug.flow_from_directory(
         	os.path.sep.join([config.NET_BASE, config.TRAIN_PATH]),
         	class_mode="input",
-        	target_size=(48, 48),
+            target_size=(image_width - 2, image_height - 2),
         	color_mode="rgb",
         	shuffle=True,
         	batch_size=args.batch)
@@ -114,7 +122,7 @@ if __name__ == '__main__':
         valGen = valAug.flow_from_directory(
         	os.path.sep.join([config.NET_BASE, config.VAL_PATH]),
         	class_mode="input",
-        	target_size=(48, 48),
+        	target_size=(image_width - 2, image_height - 2),
         	color_mode="rgb",
         	shuffle=False,
         	batch_size=args.batch)
@@ -123,7 +131,7 @@ if __name__ == '__main__':
         testGen = valAug.flow_from_directory(
         	os.path.sep.join([config.NET_BASE, config.TEST_PATH]),
         	class_mode="input",
-        	target_size=(48, 48),
+        	target_size=(image_width - 2, image_height - 2),
         	color_mode="rgb",
         	shuffle=False,
         	batch_size=args.batch)
@@ -135,7 +143,7 @@ if __name__ == '__main__':
     else:
         # train the autoencoder
         print("Loading the dataset...")
-        x_train, x_val = utils.getData()
+        x_train, x_val = utils.getData(img_width=image_width, img_height=image_height)
         print("Dataset loaded")
         print("Start training...")
         vae.train(x_train, x_val)
@@ -146,13 +154,13 @@ if __name__ == '__main__':
     if predict_img != '':
         img = cv2.imread(predict_img)
         orig = img
-        img = utils.preprocess(img)
+        img = utils.preprocess(img, image_width, image_height)
         images = np.array([img])
         reconstruction_error, rec = vae.prediction(images)
         print("Reconstruction error: " + str(reconstruction_error))
 
         detector = AnomalyDetector(anomaly_treshold = 0.45)
-        detector.evaluate(reconstruction_error, orig, rec)
+        detector.evaluate(reconstruction_error, orig, rec, dataset_id)
 
     if args.test:
 
@@ -166,7 +174,7 @@ if __name__ == '__main__':
         random.shuffle(patients)
 
         for patient in patients[-3:]:
-            x_normal, x_anormal = utils.getValData(patient)
+            x_normal, x_anormal = utils.getValData(patient, image_width, image_height, dataset_id)
 
             y_prob += np.zeros(len(x_normal)).tolist() + np.ones(len(x_anormal)).tolist()
             for normal_img in x_normal:

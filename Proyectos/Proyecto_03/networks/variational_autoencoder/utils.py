@@ -13,20 +13,26 @@ import os
 
 EPSILON = 1e-8
 
-def preprocess(img):
+def preprocess(img, img_width, img_height):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (48, 48))
+    img = cv2.resize(img, (img_width - 2, img_height - 2))
     return img
 
-def getValData(patient):
-    normalPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_DATASET, patient, "0"])))
-    anormalPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_DATASET, patient, "1"])))
+def getValData(patient, img_width, img_height, dataset_id):
+    normalPaths = None
+    anormalPaths = None
+    if dataset_id==1:
+        normalPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_CANCER_DATASET, patient, "0"])))
+        anormalPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_CANCER_DATASET, patient, "1"])))
+    else:
+        normalPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_ELLIPS_DATASET, "no_anomalies"])))
+        anormalPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_ELLIPS_DATASET, "anomalies"])))
 
     x_normal = []
     for i, normalImage in enumerate(normalPaths):
         img = cv2.imread(normalImage)
-        img = preprocess(img)
-        x_normal.append(img)
+        img = preprocess(img, img_width, img_height)
+        x_normal.append(img, img_width, img_height)
     x_normal = np.asarray(x_normal)
     #x_normal = np.reshape(x_normal, [-1, 50*50])
     #x_normal = x_normal.astype('float32') / 255
@@ -34,39 +40,47 @@ def getValData(patient):
     x_anormal = []
     for i, anormalImage in enumerate(anormalPaths):
         img = cv2.imread(anormalImage)
-        img = preprocess(img)
-        x_anormal.append(img)
+        img = preprocess(img, img_width, img_height)
+        x_anormal.append(img, img_width, img_height)
     x_anormal = np.asarray(x_anormal)
     #x_anormal = np.reshape(x_anormal, [-1, 50*50])
     #x_anormal = x_anormal.astype('float32') / 255
 
     return (x_normal, x_anormal)
 
-def getData(nd_images = False):
+def getData(nd_images = False, img_width, img_height, dataset_id):
     # grab the paths to all input images in the original input directory
     # and shuffle them
-    trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH])))
-    valPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_PATH])))
-    testPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_PATH])))
+    trainPaths = None
+    valPaths = None
+    testPaths = None
+    if dataset_id==1:
+        trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_CANCER_PATH])))
+        valPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_CANCER_PATH])))
+        testPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_CANCER_PATH])))
+    else:
+        trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_ELLIPS_PATH])))
+        valPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_ELLIPS_PATH])))
+        testPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_ELLIPS_PATH])))
 
     x_train = []
     for i, trainImage in enumerate(trainPaths):
         img = cv2.imread(trainImage)
-        img = preprocess(img)
+        img = preprocess(img, img_width, img_height)
         x_train.append(img)
     x_train = np.asarray(x_train)
     if not nd_images:
-        x_train = np.reshape(x_train, [-1, 50*50])
+        x_train = np.reshape(x_train, [-1, img_width*img_height])
     x_train = x_train.astype('float32') / 255
 
     x_val = []
     for i, valImage in enumerate(valPaths):
         img = cv2.imread(valImage)
-        img = preprocess(img)
+        img = preprocess(img, img_width, img_height)
         x_val.append(img)
     x_val = np.asarray(x_val)
     if not nd_images:
-        x_val = np.reshape(x_val, [-1, 50*50])
+        x_val = np.reshape(x_val, [-1, img_width*img_height])
     x_val = x_val.astype('float32') / 255
 
     return (x_train, x_val)
