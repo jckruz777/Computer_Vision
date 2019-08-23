@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 class AnomalyDetector:
-    def __init__(self, anomaly_treshold = 40):
+    def __init__(self, anomaly_treshold = 0.4):
         self._anomaly_treshold = anomaly_treshold
 
     def _segment(self, img):
@@ -36,7 +36,7 @@ class AnomalyDetector:
         return cv2.watershed(img,markers)
 
     def evaluate(self, reconstruction_error, orig, rec):
-        if reconstruction_error > self._anomaly_treshold:
+        if reconstruction_error < self._anomaly_treshold:
             print("Anomaly detected!!")
 
             # Get the anomaly region

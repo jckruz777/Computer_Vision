@@ -16,6 +16,7 @@ import sys
 sys.path.append('..')
 import config
 from imutils import paths
+from skimage.measure import compare_ssim as ssim
 
 
 class VAECNN():
@@ -229,8 +230,10 @@ class VAECNN():
         img = orig.astype('float32') / 255
 
         rec = self.model.predict(img)
+        ssimg = ssim(img[0], rec[0], multichannel=True)
         rec = rec * 255
         rec = rec.astype('int32')
 
         rec_img = rec[0]
-        return (self.model.evaluate(img, img, verbose=0, batch_size=1), rec_img)
+        return (ssimg, rec_img)
+        #return (self.model.evaluate(img, img, verbose=0, batch_size=1), rec_img)

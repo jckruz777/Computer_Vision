@@ -151,7 +151,7 @@ if __name__ == '__main__':
         reconstruction_error, rec = vae.prediction(images)
         print("Reconstruction error: " + str(reconstruction_error))
 
-        detector = AnomalyDetector(anomaly_treshold = 60)
+        detector = AnomalyDetector(anomaly_treshold = 0.45)
         detector.evaluate(reconstruction_error, orig, rec)
 
     if args.test:
