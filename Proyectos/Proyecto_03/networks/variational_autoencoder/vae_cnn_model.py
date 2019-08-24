@@ -1,9 +1,11 @@
 import numpy as np
 
 from keras.layers import Input, Dense, Lambda, Flatten, Reshape, merge
-from keras.layers import Conv2D, Conv2DTranspose
+from keras.layers import Conv2D, Conv2DTranspose, MaxPooling2D
+from keras.layers.normalization import BatchNormalization
 from keras.layers.merge import Concatenate
 from keras.models import Model
+from keras.layers.core import Dropout
 from keras.optimizers import RMSprop
 from keras import backend as K
 from keras.objectives import binary_crossentropy, mse
@@ -94,18 +96,27 @@ class VAECNN():
         Setup model (method should only be called in self.fit())
         """
         print("Setting up model...")
+        chanDim = -1
         # Encoder
         inputs = Input(batch_shape=(self.batch_size,) + self.input_shape)
 
         # Instantiate encoder layers
         Q_0 = Conv2D(self.input_shape[2], (2, 2), padding='same',
                      activation='relu')
+        Qn_0 = BatchNormalization(axis=chanDim)
+
         Q_1 = Conv2D(self.filters[0], (2, 2), padding='same', strides=(2, 2),
                      activation='relu')
+        Qn_1 = BatchNormalization(axis=chanDim)
+
         Q_2 = Conv2D(self.filters[1], (3, 3), padding='same', strides=(1, 1),
                      activation='relu')
+        Qn_2 = BatchNormalization(axis=chanDim)
+
         Q_3 = Conv2D(self.filters[2], (3, 3), padding='same', strides=(1, 1),
                      activation='relu')
+        Qn_3 = BatchNormalization(axis=chanDim)
+
         Q_4 = Flatten()
         Q_5 = Dense(self.hidden_dim, activation='relu')
         Q_z_mean = Dense(self.latent_cont_dim)
@@ -113,11 +124,17 @@ class VAECNN():
 
         # Set up encoder
         x = Q_0(inputs)
+        x = Qn_0(x)
         x = Q_1(x)
+        x = Qn_1(x)
         x = Q_2(x)
+        x = Qn_2(x)
         x = Q_3(x)
+        x = Qn_3(x)
         flat = Q_4(x)
         hidden = Q_5(flat)
+        hidden = BatchNormalization(axis=chanDim)(hidden)
+        hidden = Dropout(0.5)(hidden)
 
         # Parameters for continous latent distribution
         z_mean = Q_z_mean(hidden)
@@ -144,23 +161,37 @@ class VAECNN():
         G_0 = Dense(self.hidden_dim, activation='relu')
         G_1 = Dense(np.prod(out_shape), activation='relu')
         G_2 = Reshape(out_shape)
+
         G_3 = Conv2DTranspose(self.filters[2], (3, 3), padding='same',
                               strides=(1, 1), activation='relu')
+        Gn_3 = BatchNormalization(axis=chanDim)
+
         G_4 = Conv2DTranspose(self.filters[1], (3, 3), padding='same',
                               strides=(1, 1), activation='relu')
+        Gn_4 = BatchNormalization(axis=chanDim)
+
         G_5 = Conv2DTranspose(self.filters[0], (2, 2), padding='valid',
                               strides=(2, 2), activation='relu')
+        Gn_5 = BatchNormalization(axis=chanDim)
+
         G_6 = Conv2D(self.input_shape[2], (2, 2), padding='same',
                      strides=(1, 1), activation='sigmoid', name='generated')
+        Gn_6 = BatchNormalization(axis=chanDim)
 
         # Apply generator layers
         x = G_0(encoding)
+        x = BatchNormalization(axis=chanDim)(x)
+        x = Dropout(0.5)(x)
         x = G_1(x)
         x = G_2(x)
         x = G_3(x)
+        x = Gn_3(x)
         x = G_4(x)
+        x = Gn_4(x)
         x = G_5(x)
-        generated = G_6(x)
+        x = Gn_5(x)
+        x = G_6(x)
+        generated = Gn_6(x)
 
         self.model = Model(inputs, generated)
 

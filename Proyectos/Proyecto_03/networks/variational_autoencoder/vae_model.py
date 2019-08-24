@@ -35,9 +35,9 @@ class VAE:
         self._original_dim = original_dim
         self._input_shape = (original_dim, )
         self._intermediate_dim = 512
-        self._batch_size = 128
+        self._batch_size = batch_size
         self._latent_dim = 8
-        self._epochs = 50
+        self._epochs = epochs
         self._img_width = img_width - 2
         self._img_height = img_height - 2
 
