@@ -26,13 +26,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     help_ = "Load h5 model trained weights"
     parser.add_argument("-w", "--weights", help=help_)
-    help_ = "Use mse loss instead of binary cross entropy (default)"
+    help_ = "Dataset ID: 1-Breast Cancer Set (default), 2-Textured Ellipsoids"
     parser.add_argument("-ds",
                         "--dataset",
                         help=help_,
                         type=int,
                         default=1)
-    help_ = "Dataset ID: 1-Breast Cancer Set (default), 2-Textured Ellipsoids"
+    help_ = "Use mse loss instead of binary cross entropy (default)"
     parser.add_argument("-m",
                         "--mse",
                         help=help_,action='store_true')

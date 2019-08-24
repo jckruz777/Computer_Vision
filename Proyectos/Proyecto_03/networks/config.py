@@ -2,7 +2,7 @@
 import os
 
 # network base path
-NET_BASE = os.path.sep.join(["..", ".."])
+NET_BASE = os.path.sep.join([".", ".."])
 
 # initialize the path to the *original* input directory of images
 ORIG_INPUT_CANCER_DATASET = "datasets/orig"
