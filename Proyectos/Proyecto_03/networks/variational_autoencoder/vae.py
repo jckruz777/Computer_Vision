@@ -73,9 +73,11 @@ if __name__ == '__main__':
     # VAE model = encoder + decoder
     vae = None
     if args.cnn:
-        vae = VAECNN(latent_cont_dim=8, latent_disc_dim=3)
+        inputShape = (image_width - 2, image_height - 2, 3)
+        vae = VAECNN(input_shape=inputShape, latent_cont_dim=8, latent_disc_dim=3)
     else:
-        vae = VAE(original_dim, args.batch, args.epochs, image_width, image_height)
+        inputShape = (image_width - 2) * (image_height - 2)
+        vae = VAE(inputShape, args.batch, args.epochs, image_width - 2, image_height - 2)
         vae.build()
 
         # VAE loss = mse_loss or xent_loss + kl_loss
@@ -110,8 +112,9 @@ if __name__ == '__main__':
                                     #preprocessing_function=imageResize)
 
         # initialize the training generator
+        genPath = config.TRAIN_CANCER_PATH if dataset_id == 1 else config.TRAIN_ELLIPS_PATH
         trainGen = trainAug.flow_from_directory(
-        	os.path.sep.join([config.NET_BASE, config.TRAIN_PATH]),
+        	os.path.sep.join([config.NET_BASE, genPath]),
         	class_mode="input",
             target_size=(image_width - 2, image_height - 2),
         	color_mode="rgb",
@@ -119,8 +122,9 @@ if __name__ == '__main__':
         	batch_size=args.batch)
 
         # initialize the validation generator
+        genPath = config.VAL_ELLIPS_PATH if dataset_id == 1 else config.VAL_ELLIPS_PATH
         valGen = valAug.flow_from_directory(
-        	os.path.sep.join([config.NET_BASE, config.VAL_PATH]),
+        	os.path.sep.join([config.NET_BASE, genPath]),
         	class_mode="input",
         	target_size=(image_width - 2, image_height - 2),
         	color_mode="rgb",
@@ -128,8 +132,9 @@ if __name__ == '__main__':
         	batch_size=args.batch)
 
         # initialize the testing generator
+        genPath = config.TEST_ELLIPS_PATH if dataset_id == 1 else config.TEST_ELLIPS_PATH
         testGen = valAug.flow_from_directory(
-        	os.path.sep.join([config.NET_BASE, config.TEST_PATH]),
+        	os.path.sep.join([config.NET_BASE, genPath]),
         	class_mode="input",
         	target_size=(image_width - 2, image_height - 2),
         	color_mode="rgb",
@@ -143,7 +148,7 @@ if __name__ == '__main__':
     else:
         # train the autoencoder
         print("Loading the dataset...")
-        x_train, x_val = utils.getData(img_width=image_width, img_height=image_height)
+        x_train, x_val = utils.getData(img_width=image_width, img_height=image_height, dataset_id=dataset_id)
         print("Dataset loaded")
         print("Start training...")
         vae.train(x_train, x_val)

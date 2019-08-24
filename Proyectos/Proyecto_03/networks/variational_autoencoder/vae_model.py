@@ -38,8 +38,8 @@ class VAE:
         self._batch_size = 128
         self._latent_dim = 8
         self._epochs = 50
-        self._img_width = img_width
-        self._img_height = img_height
+        self._img_width = img_width - 2
+        self._img_height = img_height - 2
 
     def build(self):
         # VAE model = encoder + decoder

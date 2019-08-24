@@ -17,6 +17,7 @@ sys.path.append('..')
 import config
 from imutils import paths
 from skimage.measure import compare_ssim as ssim
+import matplotlib.pyplot as plt
 
 
 class VAECNN():
@@ -62,10 +63,10 @@ class VAECNN():
 
         # determine the total number of image paths in training, validation,
         # and testing directories
-        trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_PATH])))
+        trainPaths = list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TRAIN_ELLIPS_PATH])))
         totalTrain = len(trainPaths)
-        totalVal = len(list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_PATH]))))
-        totalTest = len(list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_PATH]))))
+        totalVal = len(list(paths.list_images(os.path.sep.join([config.NET_BASE, config.VAL_ELLIPS_PATH]))))
+        totalTest = len(list(paths.list_images(os.path.sep.join([config.NET_BASE, config.TEST_ELLIPS_PATH]))))
 
         if totalTrain % batch_size != 0:
             raise(RuntimeError("Training data shape {} is not divisible by batch size {}".format(totalTrain, self.batch_size)))
@@ -74,7 +75,7 @@ class VAECNN():
         #K.set_value(self.opt.lr, learning_rate)
         self.model.compile(optimizer=self.opt, loss=self._vae_loss)
 
-        H = self.model.fit_generator(
+        self._history = self.model.fit_generator(
 	        trainGen,
         	steps_per_epoch=totalTrain // self.batch_size,
         	validation_data=valGen,
@@ -237,3 +238,12 @@ class VAECNN():
         rec_img = rec[0]
         return (ssimg, rec_img)
         #return (self.model.evaluate(img, img, verbose=0, batch_size=1), rec_img)
+
+    def plot(self):
+        plt.plot(self._history.history['loss'])
+        plt.plot(self._history.history['val_loss'])
+        plt.title('Model loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+        plt.savefig('vae_cnn_error.png')

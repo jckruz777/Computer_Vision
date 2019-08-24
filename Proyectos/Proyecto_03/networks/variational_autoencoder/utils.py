@@ -48,7 +48,7 @@ def getValData(patient, img_width, img_height, dataset_id):
 
     return (x_normal, x_anormal)
 
-def getData(nd_images = False, img_width, img_height, dataset_id):
+def getData(img_width, img_height, dataset_id, nd_images = False):
     # grab the paths to all input images in the original input directory
     # and shuffle them
     trainPaths = None
@@ -70,7 +70,7 @@ def getData(nd_images = False, img_width, img_height, dataset_id):
         x_train.append(img)
     x_train = np.asarray(x_train)
     if not nd_images:
-        x_train = np.reshape(x_train, [-1, img_width*img_height])
+        x_train = np.reshape(x_train, [-1, (img_width - 2)*(img_height - 2)])
     x_train = x_train.astype('float32') / 255
 
     x_val = []
@@ -80,7 +80,7 @@ def getData(nd_images = False, img_width, img_height, dataset_id):
         x_val.append(img)
     x_val = np.asarray(x_val)
     if not nd_images:
-        x_val = np.reshape(x_val, [-1, img_width*img_height])
+        x_val = np.reshape(x_val, [-1, (img_width - 2)*(img_height - 2)])
     x_val = x_val.astype('float32') / 255
 
     return (x_train, x_val)
