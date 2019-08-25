@@ -8,6 +8,7 @@ from keras.models import Model
 from keras.layers.core import Dropout
 from keras.optimizers import RMSprop
 from keras import backend as K
+from keras.utils import plot_model
 from keras.objectives import binary_crossentropy, mse
 from utils import (kl_normal, kl_discrete, sampling_normal,
                   sampling_concrete, EPSILON)
@@ -218,6 +219,8 @@ class VAECNN():
         # Loss and optimizer do not matter here as we do not train these models
         self.generator.compile(optimizer=self.opt, loss='mse')
 
+        #self._plot(inputs, generated, self.model)
+
         print("Completed model setup.")
 
     def generate(self, latent_sample):
@@ -274,6 +277,9 @@ class VAECNN():
         ssimg = ssim(orig, rec[0], multichannel=True)
         rec_img = rec[0]
         return (loss, ssimg, rec_img)
+
+    def _plot(self, model):
+        plot_model(model, to_file='vae_cnn.png', show_shapes=True)
 
     def plot(self):
         plt.plot(self._history.history['loss'])

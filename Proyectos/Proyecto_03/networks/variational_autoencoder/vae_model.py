@@ -65,7 +65,7 @@ class VAE:
 
         # instantiate encoder model
         self._encoder = Model(self._inputs, [self._z_mean, self._z_log_var, z], name='encoder')
-        self._encoder.summary()
+        #self._encoder.summary()
 
         # build decoder model
         latent_inputs = Input(shape=(self._latent_dim,), name='z_sampling')
@@ -79,7 +79,7 @@ class VAE:
 
         # instantiate decoder model
         self._decoder = Model(latent_inputs, self._outputs, name='decoder')
-        self._decoder.summary()
+        #self._decoder.summary()
 
         # instantiate VAE model
         self._outputs = self._decoder(self._encoder(self._inputs)[2])
@@ -101,7 +101,7 @@ class VAE:
     def compile(self):
         self._vae.add_loss(self._vae_loss)
         self._vae.compile(optimizer='adam')
-        self._vae.summary()
+        #self._vae.summary()
 
     def loadWeights(self, weights):
         self._vae.load_weights(weights)

@@ -2,11 +2,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import cv2
-import os
 
 from keras.preprocessing.image import ImageDataGenerator
 from anomaly_detector import AnomalyDetector
@@ -62,6 +64,11 @@ if __name__ == '__main__':
     parser.add_argument("--predict",
                         help=help_,
                         default='')
+    help_ = "Anomaly treshold value between 0 and 1 (Default is 0.45)"
+    parser.add_argument("--anomaly-treshold",
+                        help=help_,
+                        type=float,
+                        default=0.45)
     args = parser.parse_args()
 
     predict_img = str(args.predict)
@@ -69,7 +76,7 @@ if __name__ == '__main__':
     image_width = 50 if dataset_id == 1 else 360
     image_height = 50 if dataset_id == 1 else 290
     original_dim = image_width * image_height
-    anomalyTreshold = 0.45
+    anomalyTreshold = float(args.anomaly_treshold)
 
     # VAE model = encoder + decoder
     vae = None
@@ -163,7 +170,9 @@ if __name__ == '__main__':
         #img = utils.preprocess(img, image_width, image_height)
         #images = np.array([img])
         reconstruction_error, ssim, rec = vae.prediction(img)
+        print("Anomaly treshold: " + str(anomalyTreshold))
         print("Reconstruction error: " + str(reconstruction_error))
+        print("SSIM: " + str(ssim))
 
         detector = AnomalyDetector(anomaly_treshold = anomalyTreshold)
         detector.evaluate(reconstruction_error, ssim, orig, rec, dataset_id)
