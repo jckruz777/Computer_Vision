@@ -69,6 +69,7 @@ if __name__ == '__main__':
     image_width = 50 if dataset_id == 1 else 360
     image_height = 50 if dataset_id == 1 else 290
     original_dim = image_width * image_height
+    anomalyTreshold = 0.45
 
     # VAE model = encoder + decoder
     vae = None
@@ -164,7 +165,7 @@ if __name__ == '__main__':
         reconstruction_error, ssim, rec = vae.prediction(img)
         print("Reconstruction error: " + str(reconstruction_error))
 
-        detector = AnomalyDetector(anomaly_treshold = 0.45)
+        detector = AnomalyDetector(anomaly_treshold = anomalyTreshold)
         detector.evaluate(reconstruction_error, ssim, orig, rec, dataset_id)
 
     if args.test:
@@ -174,18 +175,38 @@ if __name__ == '__main__':
         normal_res = []
         anormal_res = []
 
-        patients = os.listdir(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_CANCER_DATASET]))
-        random.seed(3)
-        random.shuffle(patients)
+        if dataset_id == 1:
+            patients = os.listdir(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_CANCER_DATASET]))
+            random.seed(3)
+            random.shuffle(patients)
 
-        for patient in patients:#patients[-3:]:
-            x_normal, x_anormal = utils.getValData(patient, image_width, image_height, dataset_id)
+            for patient in patients:
+                x_normal, x_anormal = utils.getValData(patient, image_width, image_height, dataset_id)
+
+                y_prob += np.zeros(len(x_normal)).tolist() + np.ones(len(x_anormal)).tolist()
+                for normal_img in x_normal:
+                    reconstruction_error, ssim, _ = vae.prediction(normal_img)
+                    normal_res.append(reconstruction_error)
+                    if reconstruction_error < (anomalyTreshold*100) and ssim > anomalyTreshold :
+                        y_res.append(0)
+                    else:
+                        y_res.append(1)
+
+                for anormal_img in x_anormal:
+                    reconstruction_error, ssim,  _ = vae.prediction(anormal_img)
+                    anormal_res.append(reconstruction_error)
+                    if reconstruction_error < (anomalyTreshold*100) and ssim > anomalyTreshold :
+                        y_res.append(0)
+                    else:
+                        y_res.append(1)
+        else:
+            x_normal, x_anormal = utils.getValData(None, image_width, image_height, dataset_id)
 
             y_prob += np.zeros(len(x_normal)).tolist() + np.ones(len(x_anormal)).tolist()
             for normal_img in x_normal:
                 reconstruction_error, ssim, _ = vae.prediction(normal_img)
                 normal_res.append(reconstruction_error)
-                if reconstruction_error < 40 and ssim > 0.4 :
+                if reconstruction_error < (anomalyTreshold*100) and ssim > anomalyTreshold :
                     y_res.append(0)
                 else:
                     y_res.append(1)
@@ -193,7 +214,7 @@ if __name__ == '__main__':
             for anormal_img in x_anormal:
                 reconstruction_error, ssim,  _ = vae.prediction(anormal_img)
                 anormal_res.append(reconstruction_error)
-                if reconstruction_error < 40 and ssim > 0.4 :
+                if reconstruction_error < (anomalyTreshold*100) and ssim > anomalyTreshold :
                     y_res.append(0)
                 else:
                     y_res.append(1)
@@ -220,9 +241,3 @@ if __name__ == '__main__':
         plt.legend(['Normal', 'Anomaly'], loc='upper right')
         plt.savefig('reconstruction_test.png')
         plt.show()
-
-    # if args.plot:
-    #     utils.plot_results(models,
-    #                 data,
-    #                 batch_size=batch_size,
-    #                 model_name="vae_mlp")
