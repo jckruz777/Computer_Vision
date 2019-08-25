@@ -132,7 +132,6 @@ class VAE:
         ssimg = ssim(orig, rec[0], multichannel=True)
         rec_img = rec[0]
         return (loss, ssimg, rec_img)
-        #return (self._vae.evaluate(img, verbose=0), rec_img)
 
     def plot(self):
         plot_model(self._encoder, to_file='vae_mlp_encoder.png', show_shapes=True)

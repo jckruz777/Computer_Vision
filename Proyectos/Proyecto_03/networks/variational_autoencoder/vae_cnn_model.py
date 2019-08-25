@@ -259,16 +259,21 @@ class VAECNN():
         return sampling_concrete(args, (self.batch_size, self.latent_disc_dim))
 
     def prediction(self, orig):
-        img = orig.astype('float32') / 255
+        img = cv2.cvtColor(orig, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, (self._input_shape[0], self._input_shape[1]))
+        orig = img
+        img = img.astype('float32') / 255
 
-        rec = self.model.predict(img)
-        ssimg = ssim(img[0], rec[0], multichannel=True)
+        images = np.array([img])
+
+        rec = self._vae.predict(images)
         rec = rec * 255
         rec = rec.astype('int32')
 
+        loss = self._vae.evaluate(images, verbose=0)
+        ssimg = ssim(orig, rec[0], multichannel=True)
         rec_img = rec[0]
-        return (ssimg, rec_img)
-        #return (self.model.evaluate(img, img, verbose=0, batch_size=1), rec_img)
+        return (loss, ssimg, rec_img)
 
     def plot(self):
         plt.plot(self._history.history['loss'])
