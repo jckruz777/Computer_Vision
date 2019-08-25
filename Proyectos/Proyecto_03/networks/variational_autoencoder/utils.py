@@ -31,18 +31,18 @@ def getValData(patient, img_width, img_height, dataset_id):
     x_normal = []
     for i, normalImage in enumerate(normalPaths):
         img = cv2.imread(normalImage)
-        img = preprocess(img, img_width, img_height)
-        x_normal.append(img, img_width, img_height)
-    x_normal = np.asarray(x_normal)
+        #img = preprocess(img, img_width, img_height)
+        x_normal.append(img)
+    #x_normal = np.asarray(x_normal)
     #x_normal = np.reshape(x_normal, [-1, 50*50])
     #x_normal = x_normal.astype('float32') / 255
 
     x_anormal = []
     for i, anormalImage in enumerate(anormalPaths):
         img = cv2.imread(anormalImage)
-        img = preprocess(img, img_width, img_height)
-        x_anormal.append(img, img_width, img_height)
-    x_anormal = np.asarray(x_anormal)
+        #img = preprocess(img, img_width, img_height)
+        x_anormal.append(img)
+    #x_anormal = np.asarray(x_anormal)
     #x_anormal = np.reshape(x_anormal, [-1, 50*50])
     #x_anormal = x_anormal.astype('float32') / 255
 

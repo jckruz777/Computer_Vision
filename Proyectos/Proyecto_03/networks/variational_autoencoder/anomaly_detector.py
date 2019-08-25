@@ -35,10 +35,10 @@ class AnomalyDetector:
 
         return cv2.watershed(img,markers)
 
-    def evaluate(self, reconstruction_error, orig, rec, dataset_id):
+    def evaluate(self, reconstruction_error, ssim, orig, rec, dataset_id):
         img_width = 200 if dataset_id==1 else 360
         img_height = 200 if dataset_id==1 else 290
-        if reconstruction_error < self._anomaly_treshold:
+        if ssim < self._anomaly_treshold and reconstruction_error > (self._anomaly_treshold * 100):
             print("Anomaly detected!!")
 
             # Get the anomaly region

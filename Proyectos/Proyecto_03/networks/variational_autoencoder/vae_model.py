@@ -2,11 +2,15 @@ from keras.layers import Lambda, Input, Dense
 from keras.models import Model
 from keras.losses import mse, binary_crossentropy
 from keras.utils import plot_model
+from keras.layers.normalization import BatchNormalization
+from keras.layers.core import Dropout
 from keras import backend as K
 
-import numpy as np
+from skimage.measure import compare_ssim as ssim
 import matplotlib.pyplot as plt
+import numpy as np
 import argparse
+import cv2
 import os
 
 # reparameterization trick
@@ -42,11 +46,16 @@ class VAE:
         self._img_height = img_height - 2
 
     def build(self):
+        chanDim = -1
         # VAE model = encoder + decoder
         # build encoder model
         self._inputs = Input(shape=self._input_shape, name='encoder_input')
         x = Dense(self._intermediate_dim, activation='relu')(self._inputs)
+        x = BatchNormalization(axis=chanDim)(x)
+        x = Dropout(0.5)(x)
         x = Dense(self._intermediate_dim, activation='relu')(x)
+        x = BatchNormalization(axis=chanDim)(x)
+        x = Dropout(0.5)(x)
         self._z_mean = Dense(self._latent_dim, name='z_mean')(x)
         self._z_log_var = Dense(self._latent_dim, name='z_log_var')(x)
 
@@ -61,7 +70,11 @@ class VAE:
         # build decoder model
         latent_inputs = Input(shape=(self._latent_dim,), name='z_sampling')
         x = Dense(self._intermediate_dim, activation='relu')(latent_inputs)
+        x = BatchNormalization(axis=chanDim)(x)
+        x = Dropout(0.5)(x)
         x = Dense(self._intermediate_dim, activation='relu')(x)
+        x = BatchNormalization(axis=chanDim)(x)
+        x = Dropout(0.5)(x)
         self._outputs = Dense(self._original_dim, activation='sigmoid')(x)
 
         # instantiate decoder model
@@ -102,17 +115,23 @@ class VAE:
         self._vae.save_weights('vae_mlp.h5')
 
     def prediction(self, orig):
-        img = np.reshape(orig, [-1, self._img_width*self._img_height])
+        img = cv2.cvtColor(orig, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, (self._img_width, self._img_height))
+        orig = img
         img = img.astype('float32') / 255
 
-        rec = self._vae.predict(img)
+        images = np.array([img])
+        images = np.reshape(images, [-1, self._img_width*self._img_height])
+
+        rec = self._vae.predict(images)
         rec = rec * 255
         rec = rec.astype('int32')
         rec = np.reshape(rec, [-1, self._img_width, self._img_height, 3])
 
-        ssimg = ssim(img[0], rec[0], multichannel=True)
+        loss = self._vae.evaluate(images, verbose=0)
+        ssimg = ssim(orig, rec[0], multichannel=True)
         rec_img = rec[0]
-        return (ssimg, rec_img)
+        return (loss, ssimg, rec_img)
         #return (self._vae.evaluate(img, verbose=0), rec_img)
 
     def plot(self):

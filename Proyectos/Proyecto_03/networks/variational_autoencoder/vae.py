@@ -77,7 +77,7 @@ if __name__ == '__main__':
         vae = VAECNN(input_shape=inputShape, latent_cont_dim=8, latent_disc_dim=3)
     else:
         inputShape = (image_width - 2) * (image_height - 2)
-        vae = VAE(inputShape, args.batch, args.epochs, image_width - 2, image_height - 2)
+        vae = VAE(inputShape, args.batch, args.epochs, image_width, image_height)
         vae.build()
 
         # VAE loss = mse_loss or xent_loss + kl_loss
@@ -159,13 +159,13 @@ if __name__ == '__main__':
     if predict_img != '':
         img = cv2.imread(predict_img)
         orig = img
-        img = utils.preprocess(img, image_width, image_height)
-        images = np.array([img])
-        reconstruction_error, rec = vae.prediction(images)
+        #img = utils.preprocess(img, image_width, image_height)
+        #images = np.array([img])
+        reconstruction_error, ssim, rec = vae.prediction(img)
         print("Reconstruction error: " + str(reconstruction_error))
 
         detector = AnomalyDetector(anomaly_treshold = 0.45)
-        detector.evaluate(reconstruction_error, orig, rec, dataset_id)
+        detector.evaluate(reconstruction_error, ssim, orig, rec, dataset_id)
 
     if args.test:
 
@@ -174,28 +174,26 @@ if __name__ == '__main__':
         normal_res = []
         anormal_res = []
 
-        patients = os.listdir(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_DATASET]))
+        patients = os.listdir(os.path.sep.join([config.NET_BASE, config.ORIG_INPUT_CANCER_DATASET]))
         random.seed(3)
         random.shuffle(patients)
 
-        for patient in patients[-3:]:
+        for patient in patients:#patients[-3:]:
             x_normal, x_anormal = utils.getValData(patient, image_width, image_height, dataset_id)
 
             y_prob += np.zeros(len(x_normal)).tolist() + np.ones(len(x_anormal)).tolist()
             for normal_img in x_normal:
-                images = np.array([normal_img])
-                reconstruction_error, _ = vae.prediction(images)
+                reconstruction_error, ssim, _ = vae.prediction(normal_img)
                 normal_res.append(reconstruction_error)
-                if reconstruction_error < 40:
+                if reconstruction_error < 40 and ssim > 0.4 :
                     y_res.append(0)
                 else:
                     y_res.append(1)
 
             for anormal_img in x_anormal:
-                images = np.array([anormal_img])
-                reconstruction_error, _ = vae.prediction(images)
+                reconstruction_error, ssim,  _ = vae.prediction(anormal_img)
                 anormal_res.append(reconstruction_error)
-                if reconstruction_error < 40:
+                if reconstruction_error < 40 and ssim > 0.4 :
                     y_res.append(0)
                 else:
                     y_res.append(1)
