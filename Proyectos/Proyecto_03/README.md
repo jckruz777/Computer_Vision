@@ -31,13 +31,13 @@ En esta carpeta se pueden encontrar los siguientes archivos y subcarpetas:
 
 * __networks/config.py:__ Script donde se configuran las rutas, parámetros e hiperparámetros de las Redes Neuronales a utilizar.
 
-* __networks/variational_autoencoder/anomaly_detector.py: Script que contiene una clase para evaluar si en las imágenes se tienen anomalías o no, permitiendo además la segmentación de dichas anomalías en caso de existir.
+* __networks/variational_autoencoder/anomaly_detector.py:__ Script que contiene una clase para evaluar si en las imágenes se tienen anomalías o no, permitiendo además la segmentación de dichas anomalías en caso de existir.
 
-* __networks/variational_autoencoder/utils.py: Script que contiene un conjunto de funciones para preprocesar el set de datos y para mejorar el reporte y graficación de los resultados.
+* __networks/variational_autoencoder/utils.py:__ Script que contiene un conjunto de funciones para preprocesar el set de datos y para mejorar el reporte y graficación de los resultados.
 
-* __networks/variational_autoencoder/vae_model.py: Script donde se definen las operaciones de un Autoencoder Variacional que utiliza una Red Neuronal Convolucional (CNN). Las operaciones permiten entrenar y probar los parámetros de red utilizados para procesar un set de datos definido por el usuario. En este caso se cuenta con dos set de datos a elegir.
+* __networks/variational_autoencoder/vae_model.py:__ Script donde se definen las operaciones de un Autoencoder Variacional que utiliza una Red Neuronal Convolucional (CNN). Las operaciones permiten entrenar y probar los parámetros de red utilizados para procesar un set de datos definido por el usuario. En este caso se cuenta con dos set de datos a elegir.
 
-* __networks/variational_autoencoder/vae.py: Script donde se definen las operaciones de un Autoencoder Variacional que utiliza un Perceptrón Multicapa (MLP). Las operaciones permiten entrenar y probar los parámetros de red utilizados para procesar un set de datos definido por el usuario.
+* __networks/variational_autoencoder/vae.py:__ Script donde se definen las operaciones de un Autoencoder Variacional que utiliza un Perceptrón Multicapa (MLP). Las operaciones permiten entrenar y probar los parámetros de red utilizados para procesar un set de datos definido por el usuario.
 
 * __networks/variational_autoencoder/*.png__: Imágenes obtenidas para visualizar el rendimiento de las redes y su estructura.
 
